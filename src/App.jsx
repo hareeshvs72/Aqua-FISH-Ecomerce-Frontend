@@ -2,13 +2,18 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
+import {  Routes, Route } from "react-router-dom";
 import Preloader from './components/Preloader'
+import Pnf from './components/Pnf';
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
    <>
-    <Preloader/>
+       <Routes>
+        <Route path='/' element={ <Preloader/>}/>
+        <Route path='*' element={ <Pnf/>}/>
+       </Routes>
+   
    </>
   
   )

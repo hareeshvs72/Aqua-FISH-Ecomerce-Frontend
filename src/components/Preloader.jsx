@@ -73,7 +73,7 @@ const DeepSilhouettePreloader = () => {
   }, [isReady]);
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 font-sans">
+    <div className="min-h-screen  bg-black flex flex-col items-center justify-center p-8 font-sans">
       <div 
         ref={containerRef} 
         className={`flex flex-col items-center gap-10 w-full max-w-md transition-opacity duration-500 ${isReady ? 'opacity-100' : 'opacity-0'}`}
