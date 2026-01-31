@@ -1,0 +1,253 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+
+// Dynamic GSAP Loader for smooth aquatic transitions
+const loadGSAP = () => {
+  return new Promise((resolve) => {
+    if (window.gsap) {
+      resolve(window.gsap);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js";
+    script.onload = () => resolve(window.gsap);
+    document.head.appendChild(script);
+  });
+};
+
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0); // Track active navigation state
+  
+  const headerRef = useRef(null);
+  const menuRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+
+const navLinks = [
+  { name: 'Home', href: '/' },
+  { name: 'Fish', href: '/fish' },
+  { name: 'Accessories', href: '/accessories' },
+  { name: 'About', href: '/about' },
+  { name: 'Contact', href: '/contact' },
+];
+
+
+  useEffect(() => {
+    loadGSAP().then(() => setIsReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (!isReady || !window.gsap) return;
+
+    const gsap = window.gsap;
+    const ctx = gsap.context(() => {
+      // Entrance Animation: Header drops in with a slight bounce
+      gsap.fromTo(".header-container", 
+        { y: -100, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 1.2, ease: "expo.out" }
+      );
+
+      // Nav items stagger in
+      gsap.fromTo(".nav-item", 
+        { y: -10, opacity: 0 }, 
+        { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out", delay: 0.5 }
+      );
+
+      // Logo slide in
+      gsap.fromTo(".logo-anim", 
+        { x: -20, opacity: 0 }, 
+        { x: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.3 }
+      );
+    }, headerRef);
+
+    return () => ctx.revert();
+  }, [isReady]);
+
+  // Handle Mobile Menu Animation
+  useEffect(() => {
+    if (!isReady || !window.gsap) return;
+    const gsap = window.gsap;
+    
+    if (isMenuOpen) {
+      gsap.to(menuRef.current, { x: 0, duration: 0.6, ease: "expo.out" });
+      gsap.fromTo(".mobile-link", 
+        { y: 20, opacity: 0 }, 
+        { y: 0, opacity: 1, stagger: 0.1, delay: 0.2, ease: "back.out(1.7)" }
+      );
+    } else {
+      gsap.to(menuRef.current, { x: "100%", duration: 0.5, ease: "expo.in" });
+    }
+  }, [isMenuOpen, isReady]);
+
+  // Handle Search Animation
+  useEffect(() => {
+    if (!isReady || !window.gsap) return;
+    const gsap = window.gsap;
+
+    if (isSearchOpen) {
+      gsap.to(searchRef.current, { 
+        y: 0, 
+        opacity: 1, 
+        pointerEvents: "auto", 
+        duration: 0.6, 
+        ease: "expo.out" 
+      });
+      setTimeout(() => searchInputRef.current?.focus(), 300);
+    } else {
+      gsap.to(searchRef.current, { 
+        y: -20, 
+        opacity: 0, 
+        pointerEvents: "none", 
+        duration: 0.4, 
+        ease: "expo.in" 
+      });
+    }
+  }, [isSearchOpen, isReady]);
+
+  const renderLogo = () => (
+    <div className="logo-anim flex items-center gap-2 group cursor-pointer" onClick={() => setActiveIdx(0)}>
+      <div className="relative">
+        <svg width="30" height="30" viewBox="0 0 40 40" fill="none" className="group-hover:rotate-12 transition-transform duration-500">
+          <path d="M5 20C5 20 12 10 22 10C32 10 38 20 38 20C38 20 32 30 22 30C12 30 5 20 5 20Z" stroke="black" strokeWidth="2.5" />
+          <circle cx="28" cy="18" r="2" fill="#dc2626" />
+          <path d="M5 20L0 12V28L5 20Z" fill="black" />
+        </svg>
+      </div>
+      <span className="text-base font-black tracking-tighter uppercase italic">
+        AQUA<span className="text-red-600">STORE</span>
+      </span>
+    </div>
+  );
+
+  return (
+    <div className="font-sans selection:bg-red-600 selection:text-white">
+      <header 
+        ref={headerRef}
+        className="header-container fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out bg-whit shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] rounded-full mt-6 mx-4 px-10 max-w-6xl lg:mx-auto border border-zinc-50"
+      >
+        <nav className="h-16 lg:h-20 flex items-center justify-between relative">
+          
+          {/* Logo */}
+          {renderLogo()}
+
+          {/* Desktop Nav */}
+          <ul
+  className={`hidden md:flex items-center gap-8 lg:gap-12 transition-opacity duration-300 ${
+    isSearchOpen ? "opacity-0" : "opacity-100"
+  }`}
+>
+  {navLinks.map((link, idx) => (
+    <li key={link.name} className="nav-item relative group py-2">
+      <Link
+        to={link.href}
+        onClick={() => setActiveIdx(idx)}
+        className={`text-[10px] lg:text-[11px] font-black uppercase tracking-[0.25em] transition-colors duration-300
+          ${
+            activeIdx === idx
+              ? "text-red-600"
+              : "text-zinc-400 group-hover:text-black"
+          }`}
+      >
+        {link.name}
+      </Link>
+
+      {/* 🔴 Active underline */}
+      <div
+        className={`absolute -bottom-1 left-1/2 -translate-x-1/2 h-[2px] bg-red-600 transition-all duration-300 ease-out
+          ${
+            activeIdx === idx
+              ? "w-full opacity-100"
+              : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+          }`}
+      />
+    </li>
+  ))}
+</ul>
+
+
+          {/* Desktop Utils */}
+          <div className="hidden md:flex items-center gap-6 nav-item">
+            <button 
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className={`transition-colors duration-300 relative group z-10 ${isSearchOpen ? 'text-red-600' : 'text-zinc-400 hover:text-black'}`}
+            >
+              {isSearchOpen ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              )}
+            </button>
+            <button className="bg-black text-white p-2.5 rounded-full hover:bg-red-600 transition-all duration-300 shadow-lg hover:shadow-red-600/30 active:scale-90">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </button>
+          </div>
+
+          {/* Search Overlay */}
+          <div 
+            ref={searchRef}
+            className="absolute inset-0 flex items-center justify-center bg-white rounded-full opacity-0 translate-y-[-20px] pointer-events-none"
+          >
+            <div className="w-full max-w-2xl px-12 flex items-center gap-4">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input 
+                ref={searchInputRef}
+                type="text" 
+                placeholder="SEARCH SPECIES, ACCESSORIES..." 
+                className="w-full bg-transparent border-none outline-none text-xs font-black uppercase tracking-[0.2em] placeholder:text-zinc-200 text-black"
+              />
+              <button 
+                onClick={() => setIsSearchOpen(false)}
+                className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Toggle */}
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden flex flex-col gap-1.5 z-[60] p-2"
+          >
+            <div className={`h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? 'w-6 rotate-45 translate-y-2 bg-red-600' : 'w-6'}`} />
+            <div className={`h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? 'opacity-0' : 'w-4'}`} />
+            <div className={`h-[2px] bg-black transition-all duration-300 ${isMenuOpen ? 'w-6 -rotate-45 -translate-y-2 bg-red-600' : 'w-6'}`} />
+          </button>
+        </nav>
+
+        {/* Mobile Menu Overlay */}
+        <div 
+          ref={menuRef}
+          className="fixed inset-0 bg-white z-50 translate-x-full md:hidden flex flex-col items-center justify-center gap-8"
+        >
+          <div className="absolute top-10 left-10 opacity-20 text-[10px] font-black uppercase tracking-[1em] rotate-90 origin-left">
+            Navigation Menu
+          </div>
+          {navLinks.map((link, idx) => (
+            <Link 
+              key={link.name}
+              to={link.href}
+              onClick={() => {
+                setIsMenuOpen(false);
+                setActiveIdx(idx);
+              }}
+              className={`mobile-link text-4xl font-black uppercase tracking-tighter transition-colors ${activeIdx === idx ? 'text-red-600' : 'text-black hover:text-red-600'}`}
+            >
+              {link.name}
+            </Link>
+          ))}
+          <div className="mt-12 flex gap-8 mobile-link">
+             <span className="text-[10px] font-black uppercase tracking-widest border-b border-red-600 pb-1 cursor-pointer">Instagram</span>
+             <span className="text-[10px] font-black uppercase tracking-widest border-b border-red-600 pb-1 cursor-pointer">Twitter</span>
+          </div>
+        </div>
+      </header>
+    </div>
+  );
+};
+
+export default Header;

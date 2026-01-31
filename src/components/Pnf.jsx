@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 
 /**
- * Pnf Component - Hooked Variant
- * Fully responsive + ZERO scrollbar
- * Theme, design & GSAP logic unchanged
+ * Pnf Component – Hooked Variant
+ * FINAL FIXED VERSION
+ * - No scrollbar
+ * - GSAP CDN safe
+ * - Design & animation unchanged
  */
 
 const loadGSAP = () => {
@@ -33,7 +35,7 @@ const Pnf = () => {
 
     const gsap = window.gsap;
     const ctx = gsap.context(() => {
-      // Hook bobbing
+      // Hook bobbing animation
       gsap.to(".hook-line", {
         height: 140,
         duration: 2.5,
@@ -51,7 +53,7 @@ const Pnf = () => {
         ease: "power3.out",
       });
 
-      // Background dust
+      // Background dust motion
       gsap.to(".bg-dust", {
         y: "random(-40, 40)",
         opacity: "random(0.1, 0.3)",
@@ -67,13 +69,13 @@ const Pnf = () => {
   }, [isReady]);
 
   return (
-    /* HARD VIEWPORT CLIP – prevents any scroll */
+    /* HARD VIEWPORT CLIP — prevents scrollbars */
     <div className="fixed inset-0 overflow-hidden bg-white">
       <div
         ref={containerRef}
         className="w-full h-full flex flex-col items-center justify-center px-4 sm:px-6 relative font-sans select-none"
       >
-        {/* Background Ambience */}
+        {/* Background particles */}
         <div className="absolute inset-0 pointer-events-none opacity-20">
           {[...Array(12)].map((_, i) => (
             <div
@@ -88,19 +90,11 @@ const Pnf = () => {
         </div>
 
         <div className="flex flex-col items-center w-full max-w-md relative z-10">
-          {/* Hook */}
+          {/* Hook visual */}
           <div className="flex flex-col items-center mb-10 sm:mb-12">
             <div className="hook-line w-[1.5px] bg-zinc-200 h-[60px] sm:h-[80px]" />
-            <div
-              className="w-10 h-10 sm:w-12 sm:h-12 
-              border-b-[3px] border-l-[3px] 
-              border-red-600 rounded-bl-[2.5rem] 
-              -mt-[1px] relative"
-            >
-              <div
-                className="absolute right-0 bottom-3 sm:bottom-4 
-                w-2 h-[3px] bg-red-600 rotate-[45deg] rounded-full"
-              />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-b-[3px] border-l-[3px] border-red-600 rounded-bl-[2.5rem] -mt-[1px] relative">
+              <div className="absolute right-0 bottom-3 sm:bottom-4 w-2 h-[3px] bg-red-600 rotate-[45deg] rounded-full" />
             </div>
           </div>
 
@@ -119,24 +113,14 @@ const Pnf = () => {
             </p>
           </div>
 
-          {/* Button */}
+          {/* Action button */}
           <div className="reveal-item">
             <a
               href="/"
-              className="group relative px-8 sm:px-10 py-3 sm:py-4 
-              bg-black text-white rounded-full 
-              text-[9px] sm:text-[10px] font-black 
-              uppercase tracking-[0.18em] sm:tracking-[0.2em] 
-              overflow-hidden block shadow-2xl 
-              active:scale-95 transition-transform"
+              className="group relative px-8 sm:px-10 py-3 sm:py-4 bg-black text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.18em] sm:tracking-[0.2em] overflow-hidden block shadow-2xl active:scale-95 transition-transform"
             >
               <span className="relative z-10">Swim Back Home</span>
-              <div
-                className="absolute inset-0 bg-red-600 
-                translate-y-full group-hover:translate-y-0 
-                transition-transform duration-500 
-                ease-[cubic-bezier(0.87,0,0.13,1)]"
-              />
+              <div className="absolute inset-0 bg-red-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.87,0,0.13,1)]" />
             </a>
           </div>
 
