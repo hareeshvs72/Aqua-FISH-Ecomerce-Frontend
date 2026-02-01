@@ -127,25 +127,7 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* HEADER COMPONENT */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-black/10 backdrop-blur-md border-b border-white/10">
-        <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center text-white">
-          <div className="text-2xl font-black uppercase tracking-tighter">
-            Aqua<span className="text-red-600">Fish</span>
-          </div>
-          <ul className="hidden md:flex space-x-8 text-xs font-bold uppercase tracking-widest">
-            <li className="hover:text-red-600 transition-colors cursor-pointer">Collection</li>
-            <li className="hover:text-red-600 transition-colors cursor-pointer">Equipment</li>
-            <li className="hover:text-red-600 transition-colors cursor-pointer">Offers</li>
-            <li className="hover:text-red-600 transition-colors cursor-pointer">Contact</li>
-          </ul>
-          <div className="flex items-center space-x-4">
-             <button className="bg-red-600 px-6 py-2 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">
-                Shop Now
-             </button>
-          </div>
-        </nav>
-      </header>
+     
 
       <main ref={containerRef} className="bg-white text-black font-sans selection:bg-red-600 selection:text-white overflow-x-hidden flex-grow">
         
@@ -264,45 +246,7 @@ const Home = () => {
       </main>
 
       {/* FOOTER COMPONENT */}
-      <footer className="bg-black text-white pt-20 pb-10 px-6 md:px-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
-            <div className="md:col-span-2">
-              <div className="text-3xl font-black uppercase tracking-tighter mb-6">
-                Aqua<span className="text-red-600">Fish</span>
-              </div>
-              <p className="text-gray-400 font-light max-w-md leading-relaxed">
-                Elevating your aquatic experience with hand-picked premium species 
-                and world-class maintenance equipment. Your aquarium journey starts here.
-              </p>
-            </div>
-            <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] mb-6 text-red-600">Links</h5>
-              <ul className="space-y-4 text-sm text-gray-400">
-                <li className="hover:text-white transition-colors cursor-pointer">About Us</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Shipping Policy</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Privacy</li>
-                <li className="hover:text-white transition-colors cursor-pointer">FAQs</li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] mb-6 text-red-600">Connect</h5>
-              <ul className="space-y-4 text-sm text-gray-400">
-                <li className="hover:text-white transition-colors cursor-pointer">Instagram</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Facebook</li>
-                <li className="hover:text-white transition-colors cursor-pointer">YouTube</li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-            <span>&copy; 2024 AquaFish Store. All Rights Reserved.</span>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-               <span className="cursor-pointer hover:text-white transition-colors">Terms</span>
-               <span className="cursor-pointer hover:text-white transition-colors">Privacy</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+   
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes subtle-glow {

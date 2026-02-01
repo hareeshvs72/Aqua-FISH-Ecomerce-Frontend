@@ -105,7 +105,6 @@ const Contact = () => {
 
   return (
    <>
-   <Header/>
         <div className="flex flex-col min-h-screen bg-white selection:bg-red-600 selection:text-white">
           <main ref={containerRef} className="flex-grow">
             
@@ -208,7 +207,6 @@ const Contact = () => {
             html { scroll-behavior: smooth; }
           `}} />
         </div>
-        <Footer/>
    </>
   );
 };

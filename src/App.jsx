@@ -9,18 +9,23 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './user/pages/Home';
 import Contact from './user/pages/Contact';
+import About from './user/pages/About';
+import MainLayout from './user/component/MainLayout';
 function App() {
 
   return (
     <>
- 
+
 
       <Routes>
-    
-        <Route path='/' element={<Home/>} />
-        {/* {/* <Route path='/h' element={} /> */}
-        <Route path='/contact' element={<Contact/>} /> 
-        <Route path='*' element={<Pnf />} />
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+
+        </Route>
+
+        <Route path="*" element={<Pnf />} />
       </Routes>
 
     </>
