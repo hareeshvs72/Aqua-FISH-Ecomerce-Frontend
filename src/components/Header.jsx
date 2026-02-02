@@ -124,10 +124,10 @@ const navLinks = [
   );
 
   return (
-    <div className="font-sans selection:bg-red-600 selection:text-white">
+    <div className="font-sans  selection:bg-red-600 selection:text-white">
       <header 
         ref={headerRef}
-        className="header-container fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out bg-whit shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] rounded-full mt-6 mx-4 px-10 max-w-6xl lg:mx-auto border border-zinc-50"
+        className="header-container bg-white fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out bg-whit shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] rounded-full mt-6 mx-4 px-10 max-w-6xl lg:mx-auto border border-zinc-50"
       >
         <nav className="h-16 lg:h-20 flex items-center justify-between relative">
           

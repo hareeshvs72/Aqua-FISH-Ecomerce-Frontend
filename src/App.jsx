@@ -11,6 +11,8 @@ import Home from './user/pages/Home';
 import Contact from './user/pages/Contact';
 import About from './user/pages/About';
 import MainLayout from './user/component/MainLayout';
+import Login from './user/pages/Login';
+
 function App() {
 
   return (
@@ -24,6 +26,7 @@ function App() {
           <Route path="/about" element={<About />} />
 
         </Route>
+                   <Route path="/login" element={<Login />} />
 
         <Route path="*" element={<Pnf />} />
       </Routes>
