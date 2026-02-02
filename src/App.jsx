@@ -1,39 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { lazy, Suspense } from 'react';
 import { Routes, Route } from "react-router-dom";
-import Preloader from './components/Preloader'
+
+import './App.css';
+import Preloader from './components/Preloader';
 import Pnf from './components/Pnf';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import Home from './user/pages/Home';
-import Contact from './user/pages/Contact';
-import About from './user/pages/About';
 import MainLayout from './user/component/MainLayout';
-import Login from './user/pages/Login';
+
+// ✅ Lazy-loaded pages
+const Home = lazy(() => import('./user/pages/Home'));
+const About = lazy(() => import('./user/pages/About'));
+const Contact = lazy(() => import('./user/pages/Contact'));
+const Login = lazy(() => import('./user/pages/Login'));
+const Signup = lazy(() => import('./user/pages/SignUp')); // 👈 add this
 
 function App() {
-
   return (
-    <>
-
-
+    <Suspense fallback={<Preloader />}>
       <Routes>
+
+        {/* Main Layout Pages */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
-
+          <Route path="/contact" element={<Contact />} />
         </Route>
-                   <Route path="/login" element={<Login />} />
 
+        {/* Auth Pages (NO layout) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* 404 */}
         <Route path="*" element={<Pnf />} />
+
       </Routes>
-
-    </>
-
-  )
+    </Suspense>
+  );
 }
 
-export default App
+export default App;
