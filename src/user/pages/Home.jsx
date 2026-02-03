@@ -144,7 +144,7 @@ const Home = () => {
               playsInline
               className="w-full h-full object-cover opacity-70"
             >
-              <source src="https://v.ftcdn.net/02/33/27/15/700_F_233271505_vR8NnLq1WpYpMvU7B0i6Dk6pYVvVq1Vw_ST.mp4" type="video/mp4" />
+              <source src="/hero.mp4" type="video/mp4" />
               <source src="https://assets.mixkit.co/videos/preview/mixkit-slow-motion-of-a-fish-swimming-in-the-water-44026-large.mp4" type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-black/40"></div>

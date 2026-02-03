@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Eye, EyeOff, Mail, Lock, LogIn, Fish, Waves, AlertCircle, ShieldCheck, Anchor } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -7,6 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [gsapLoaded, setGsapLoaded] = useState(false);
+  const navigate = useNavigate()
 
   const cardRef = useRef(null);
   const bgRef = useRef(null);
@@ -156,7 +158,7 @@ const Login = () => {
           </form>
 
           <div className="mt-6 sm:mt-10 text-center">
-            <button className="text-[10px] sm:text-xs text-white/30 hover:text-white transition-all">
+            <button onClick={()=>navigate('/signup')} className="text-[10px] sm:text-xs text-white/30 hover:text-white transition-all">
               New explorer? <span className="text-red-500 font-black tracking-tighter ml-1">START EXPEDITION</span>
             </button>
           </div>
