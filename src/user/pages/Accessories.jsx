@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Accessories = () => {
   const [filters, setFilters] = useState({
@@ -19,7 +20,7 @@ const Accessories = () => {
     brand: 'All'
   });
   const [isLoaded, setIsLoaded] = useState(false);
-
+ const navigate = useNavigate()
   // Mock Accessories Data
   const ACCESSORIES = [
     { id: 201, name: "Ultra-Quiet External Filter", category: "Filters", price: 120, brand: "AquaFlow", img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" },
@@ -142,7 +143,7 @@ const Accessories = () => {
           {filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 md:gap-x-8 gap-y-10 md:gap-y-12">
               {filteredItems.map((item) => (
-                <div key={item.id} className="item-card group">
+                <div onClick={()=>navigate(`/view/${item.id}/aqua`)} key={item.id} className="item-card group">
                   <div className="relative aspect-square overflow-hidden mb-4 md:mb-5 bg-neutral-50 rounded-sm">
                     <img 
                       src={item.img} alt={item.name} 

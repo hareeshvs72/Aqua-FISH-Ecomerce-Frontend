@@ -8,6 +8,7 @@ import MainLayout from './user/component/MainLayout';
 import Fish from './user/pages/Fish';
 import Accessories from './user/pages/Accessories';
 import Cart from './user/pages/Cart';
+import ProductView from './user/pages/ProductView';
 
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
@@ -26,13 +27,16 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/fish" element={<Fish/>} />
-                    <Route path="/accessories" element={<Accessories/>} />
+          <Route path="/fish" element={<Fish />} />
+          <Route path="/accessories" element={<Accessories />} />
 
 
 
         </Route>
-                                                <Route path="/cart" element={<Cart/>} />
+
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/view/:id/aqua" element={<ProductView />} />
+
 
         {/* Auth Pages (NO layout) */}
         <Route path="/login" element={<Login />} />
