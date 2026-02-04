@@ -7,6 +7,7 @@ import Pnf from './components/Pnf';
 import MainLayout from './user/component/MainLayout';
 import Fish from './user/pages/Fish';
 import Accessories from './user/pages/Accessories';
+import Cart from './user/pages/Cart';
 
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
@@ -29,7 +30,9 @@ function App() {
                     <Route path="/accessories" element={<Accessories/>} />
 
 
+
         </Route>
+                                                <Route path="/cart" element={<Cart/>} />
 
         {/* Auth Pages (NO layout) */}
         <Route path="/login" element={<Login />} />
