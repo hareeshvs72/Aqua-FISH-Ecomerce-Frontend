@@ -5,6 +5,7 @@ import './App.css';
 import Preloader from './components/Preloader';
 import Pnf from './components/Pnf';
 import MainLayout from './user/component/MainLayout';
+import Fish from './user/pages/Fish';
 
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
@@ -23,6 +24,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/fish" element={<Fish/>} />
+
         </Route>
 
         {/* Auth Pages (NO layout) */}

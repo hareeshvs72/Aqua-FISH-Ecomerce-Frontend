@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Dynamic GSAP Loader for smooth aquatic transitions
 const loadGSAP = () => {
@@ -28,6 +28,8 @@ const Header = () => {
   const searchRef = useRef(null);
   const searchInputRef = useRef(null);
   const userMenuRef = useRef(null);
+
+   const navigate =  useNavigate()
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -154,7 +156,7 @@ const Header = () => {
   return (
     <header
       ref={headerRef}
-      className="header-container bg-white fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] rounded-full mt-6 mx-4 px-10 max-w-6xl lg:mx-auto border border-zinc-50 font-sans selection:bg-red-600 selection:text-white"
+      className="header-container  bg-white  fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-in-out shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] rounded-full mt-6 mx-4 px-10 max-w-6xl lg:mx-auto border border-zinc-50 font-sans selection:bg-red-600 selection:text-white"
     >
       <nav className="h-16 lg:h-20 flex items-center justify-between relative">
 
@@ -199,7 +201,7 @@ const Header = () => {
           <div className="relative">
             {!isLoggedIn ? (
               <button
-                onClick={() => setIsLoggedIn(true)}
+                onClick={() => navigate('/login') }
                 className="text-[10px] font-black uppercase tracking-widest px-6 py-2.5 rounded-full border-2 border-zinc-100 hover:border-black hover:bg-black hover:text-white transition-all duration-300 active:scale-95"
               >
                 Login
