@@ -1,3 +1,4 @@
+import { useClerk, useUser } from '@clerk/clerk-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -20,8 +21,12 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Simulated Auth State
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+ 
+
+  const {user,isSignedIn} = useUser()
+const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
+ 
 
   const headerRef = useRef(null);
   const menuRef = useRef(null);
@@ -39,9 +44,9 @@ const Header = () => {
     { name: 'Contact', href: '/contact' },
   ];
   const userActions = [
-    { name: 'My Profile', href: '#' },
-    { name: 'Orders', href: '#' },
-    { name: 'Settings', href: '#' },
+    { name: 'My Profile', href: () => openUserProfile() },
+    { name: 'Orders', href: () => navigate('/orders')  },
+    { name: 'Settings', href:  () => navigate('/settings')  },
   ];
 
   useEffect(() => {
@@ -199,9 +204,9 @@ const Header = () => {
 
           {/* Auth Section */}
           <div className="relative">
-            {!isLoggedIn ? (
+            {!isSignedIn  ? (
               <button
-                onClick={() => navigate('/login') }
+               onClick={() => openSignIn()}
                 className="text-[10px] font-black uppercase tracking-widest px-6 py-2.5 rounded-full border-2 border-zinc-100 hover:border-black hover:bg-black hover:text-white transition-all duration-300 active:scale-95"
               >
                 Login
@@ -213,7 +218,10 @@ const Header = () => {
                   className={`flex items-center gap-2 p-1 rounded-full transition-all duration-300 ${isUserMenuOpen ? 'ring-2 ring-red-600 ring-offset-2' : ''}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center overflow-hidden">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    {/* <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg> */}
+                     {user?.imageUrl && (
+            <img src={user.imageUrl} alt="profile" className="w-full h-full object-cover" />
+          ) }
                   </div>
                   <svg className={`transition-transform duration-300 ${isUserMenuOpen ? 'rotate-180' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                 </button>
@@ -225,22 +233,19 @@ const Header = () => {
                 >
                   <div className="px-4 py-2 border-b border-zinc-50 mb-2">
                     <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">Welcome back</p>
-                    <p className="text-xs font-bold truncate">Alex Fisher</p>
+                    <p className="text-xs font-bold truncate">{user?.firstName}</p>
                   </div>
                   {userActions.map((action) => (
                     <a
                       key={action.name}
-                      href={action.href}
+                      onClick={action.href}
                       className="block px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors"
                     >
                       {action.name}
                     </a>
                   ))}
                   <button
-                    onClick={() => {
-                      setIsLoggedIn(false);
-                      setIsUserMenuOpen(false);
-                    }}
+                     onClick={() => signOut()}
                     className="w-full text-left px-4 py-2 mt-2 border-t border-zinc-50 text-[10px] font-black uppercase tracking-widest text-red-600 hover:bg-red-50 transition-colors"
                   >
                     Logout
@@ -310,11 +315,12 @@ const Header = () => {
           </Link>
 
         ))}
-        {!isLoggedIn ? (
+        {!isSignedIn  ? (
           <button
             onClick={() => {
-              setIsLoggedIn(true);
-              setIsMenuOpen(false);
+              openSignIn();
+              // setIsLoggedIn(true);
+              // setIsMenuOpen(false);
             }}
             className="mobile-link mt-4 text-xl font-black uppercase border-2 border-black px-10 py-3 rounded-full hover:bg-black hover:text-white transition-all"
           >
@@ -323,8 +329,9 @@ const Header = () => {
         ) : (
           <button
             onClick={() => {
-              setIsLoggedIn(false);
-              setIsMenuOpen(false);
+              // setIsLoggedIn(false);
+              // setIsMenuOpen(false);
+              signOut()
             }}
             className="mobile-link mt-4 text-xl font-black uppercase text-red-600"
           >
@@ -335,6 +342,7 @@ const Header = () => {
     </header>
   );
 };
+
 
 export default Header;
 export const App = () => (

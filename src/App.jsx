@@ -9,6 +9,7 @@ import Fish from './user/pages/Fish';
 import Accessories from './user/pages/Accessories';
 import Cart from './user/pages/Cart';
 import ProductView from './user/pages/ProductView';
+import Clerk from './user/pages/Clerk';
 
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
@@ -41,6 +42,7 @@ function App() {
         {/* Auth Pages (NO layout) */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        {/* <Route path="/clerk" element={<Clerk/>} /> */}
 
         {/* 404 */}
         <Route path="*" element={<Pnf />} />

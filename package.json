@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.60.1",
+    "@clerk/themes": "^2.4.52",
     "@tailwindcss/vite": "^4.1.18",
     "gsap": "^3.14.2",
     "lucide-react": "^0.563.0",

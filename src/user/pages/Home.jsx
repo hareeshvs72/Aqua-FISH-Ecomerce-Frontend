@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
+import { useClerk } from '@clerk/clerk-react';
+import { useClerkToken } from '../../Service/useClerkToken';
 const Home = () => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -8,8 +10,18 @@ const Home = () => {
   const offersRef = useRef(null);
   const categoriesRef = useRef(null);
   const [gsapLoaded, setGsapLoaded] = useState(false);
-
+ const navigate = useNavigate()
+ const {handleToken} = useClerkToken()
+ useEffect(()=>{
+ const handiletoken=async()=>{
+   const token  = await  handleToken()
+    console.log("token",token);
+  }
+  handiletoken()
+ },[])
   useEffect(() => {
+  
+    
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -60,6 +72,7 @@ const Home = () => {
         stagger: 0.2,
         ease: "power3.out"
       });
+
 
       // --- SECTION 2: FEATURED FISH PARALLAX ---
       const fishCards = gsap.utils.toArray('.fish-card');
@@ -124,6 +137,7 @@ const Home = () => {
     { name: "Gold Dust Molly", price: "$15", img: "🦐" },
     { name: "Koi Angel Fish", price: "$55", img: "🎐" },
   ];
+        const {openSignIn,openSignUp,isSignedIn} =  useClerk()
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -176,7 +190,9 @@ const Home = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {featuredFish.map((fish, i) => (
-                <div key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
+                <div  onClick={()=>{!isSignedIn ? openSignIn({
+                     afterSignInUrl: `/view/${fish?.id}/aqua`
+                  }) : navigate(`/view/${item?.id}/aqua`)}}  key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
                   <div className="absolute top-8 right-8 bg-red-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
                     Featured
                   </div>
