@@ -9,14 +9,15 @@
   } from 'lucide-react';
   import { useNavigate } from 'react-router-dom';
   import { useAuth, useClerk } from '@clerk/clerk-react';
+import { getAllProductsAPI } from '../../Service/allApi';
 
-
-
+  
+ 
   const Fish = () => {
-    const [filters, setFilters] = useState({
-      category: 'Fish',
-      searchQuery: ''
-    });
+  
+    const [products,setProducts]  = useState([])
+    const [category,setCategory] = useState("Fish")
+    const [searchKey,setSearchKey] =useState("")
     const [isLoaded, setIsLoaded] = useState(false);
     const navigate = useNavigate()
     const {isSignedIn} =  useAuth()
@@ -40,13 +41,16 @@
         { id: 104, name: "Red Ludwigia", type: "High Light", difficulty: "Expert", price: 22, img: "https://images.unsplash.com/photo-1600100397608-f010e42ed97c?auto=format&fit=crop&q=80&w=400" },
       ]
     };
-
-    const filteredItems = useMemo(() => {
-      const currentList = DATA[filters.category];
-      return currentList.filter(item => {
-        return item.name.toLowerCase().includes(filters.searchQuery.toLowerCase());
-      });
-    }, [filters]);
+useEffect(()=>{
+    handileGetAllProducts()
+  },[category,searchKey])
+  
+    // const filteredItems = useMemo(() => {
+    //   const currentList = DATA[filters.category];
+    //   return currentList.filter(item => {
+    //     return item.name.toLowerCase().includes(filters.searchQuery.toLowerCase());
+    //   });
+    // }, [filters]);
 
     useEffect(() => {
       setIsLoaded(true);
@@ -72,7 +76,7 @@
           { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out", overwrite: true }
         );
       }
-    }, [filteredItems, isLoaded]);
+    }, [category, isLoaded]);
 
     const updateFilter = (key, value) => {
       setFilters(prev => ({ ...prev, [key]: value }));
@@ -86,7 +90,25 @@
           element.scrollIntoView({ behavior: 'smooth' });
       }
     };
+    
+    // get all products 
+    const handileGetAllProducts = async()=>{
+      console.log("inside get all products");
+      
+        const filter = {
+          category:category,
+          search:searchKey
 
+        }
+        const query = new URLSearchParams(filter).toString()
+      const result = await getAllProductsAPI(query)
+      console.log(result.data.data);
+      setProducts(result.data.data)
+
+
+    }
+
+     
     return (
       <div className={`min-h-screen bg-white text-black font-sans transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         
@@ -134,22 +156,22 @@
               <Search size={20} className="absolute left-5 md:left-6 top-1/2 -translate-y-1/2 text-neutral-400" />
               <input 
                 type="text"
-                placeholder={`Search ${filters.category.toLowerCase()}...`}
-                value={filters.searchQuery}
-                onChange={(e) => updateFilter('searchQuery', e.target.value)}
+                placeholder={`Search ${category.toLowerCase()}...`}
+                value={searchKey}
+                onChange={(e) => setSearchKey(e.target.value)}
                 className="w-full bg-neutral-50 border-2 border-transparent focus:border-black focus:bg-white pl-12 md:pl-16 pr-6 py-4 md:py-5 text-lg md:text-xl font-bold outline-none transition-all rounded shadow-sm"
               />
             </div>
             <div className="flex bg-neutral-100 p-1 rounded-lg border border-neutral-200 w-full lg:w-auto overflow-x-auto no-scrollbar">
               <button 
-                onClick={() => updateFilter('category', 'Fish')}
-                className={`flex-1 lg:flex-none whitespace-nowrap px-6 md:px-12 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all rounded-md flex items-center justify-center gap-2 ${filters.category === 'Fish' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                onClick={() => { setCategory('Fish')}}
+                className={`flex-1 lg:flex-none whitespace-nowrap px-6 md:px-12 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all rounded-md flex items-center justify-center gap-2 ${category === 'Fish' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
               >
                 <Waves size={14}/> Live Fish
               </button>
               <button 
-                onClick={() => updateFilter('category', 'Plants')}
-                className={`flex-1 lg:flex-none whitespace-nowrap px-6 md:px-12 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all rounded-md flex items-center justify-center gap-2 ${filters.category === 'Plants' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
+                onClick={() => {  setCategory('Plants')}}
+                className={`flex-1 lg:flex-none whitespace-nowrap px-6 md:px-12 py-3 md:py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all rounded-md flex items-center justify-center gap-2 ${category === 'Plants' ? 'bg-black text-white' : 'text-neutral-500 hover:text-black'}`}
               >
                 <Leaf size={14}/> Live Plants
               </button>
@@ -160,23 +182,23 @@
           <div className="flex flex-col gap-6 md:gap-8">
             <div className="flex justify-between items-center pb-4 border-b border-neutral-50">
               <h2 className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-neutral-300">
-                {filters.category} Catalog / <span className="text-black">{filteredItems.length} Available</span>
+                {category} Catalog / <span className="text-black">{products.length} Available</span>
               </h2>
             </div>
 
-            {filteredItems.length > 0 ? (
+            {products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 md:gap-x-8 gap-y-10 md:gap-y-12">
-                {filteredItems.map((item) => (
-                  <div  onClick={()=>{!isSignedIn ? openSignIn({
-                     afterSignInUrl: `/view/${item?.id}/aqua`
-                  }) : navigate(`/view/${item?.id}/aqua`)}}  key={item.id} className="item-card group cursor-pointer">
+                {products?.map((item) => (
+                  <div   onClick={()=>{!isSignedIn ? openSignIn({
+                     afterSignInUrl: `/view/${item?._id}/aqua`
+                  }) : navigate(`/view/${item?._id}/aqua`)}}  key={item?._id} className="item-card group cursor-pointer">
                     <div className="relative aspect-square overflow-hidden mb-4 md:mb-5 bg-neutral-100 rounded-sm">
                       <img 
                         src={item.img} alt={item.name} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute top-3 right-3 md:top-4 md:right-4 bg-black text-white text-[8px] font-black px-2 py-1 uppercase">
-                        {item.type}
+                        {item.waterType}
                       </div>
                     </div>
 
@@ -185,7 +207,7 @@
                         <h3 className="text-base md:text-lg font-black uppercase tracking-tighter leading-tight mb-1 md:mb-2 group-hover:text-red-600 transition-colors truncate">{item.name}</h3>
                         <div className="flex flex-wrap items-center gap-2 md:gap-3 text-neutral-400 text-[8px] md:text-[9px] font-black uppercase tracking-widest">
                           <span className="flex items-center gap-1 shrink-0"><ShieldCheck size={11} className="text-red-600"/> {item.difficulty}</span>
-                          <span className="px-1.5 py-0.5 border border-neutral-100 text-[8px] shrink-0">{item.type}</span>
+                          <span className="px-1.5 py-0.5 border border-neutral-100 text-[8px] shrink-0">{item.waterType}</span>
                         </div>
                       </div>
                       <div className="text-base md:text-lg font-black text-black shrink-0">
@@ -200,7 +222,7 @@
                 <AlertCircle size={32} className="mx-auto mb-4 text-neutral-200" />
                 <h3 className="text-lg md:text-xl font-black tracking-tighter mb-2 uppercase">No Specimens Found</h3>
                 <p className="text-neutral-400 text-[10px] md:text-xs font-medium mb-6 md:mb-8">Try searching for a different name.</p>
-                <button onClick={clearSearch} className="px-8 md:px-10 py-3 md:py-4 bg-black text-white font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-colors rounded">
+                <button onClick={()=>setSearchKey("")} className="px-8 md:px-10 py-3 md:py-4 bg-black text-white font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-colors rounded">
                   Clear Search
                 </button>
               </div>

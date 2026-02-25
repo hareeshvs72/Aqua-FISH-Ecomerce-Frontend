@@ -9,34 +9,36 @@ import {
   Eye,
   ArrowLeft
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getSingleProductAPI } from '../../Service/allApi';
 
 const ProductView = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
-
+  const [product ,setProduct] = useState({})
+   const {id} = useParams()
   const navigate =  useNavigate()
 
   // Main Product Data
-  const product = {
-    name: "Golden Guppy Fish",
-    scientificName: "Poecilia reticulata",
-    category: "Freshwater Exotic",
-    price: 299,
-    description: "A vibrant and hardy addition to any community tank. These Golden Guppies exhibit a brilliant metallic sheen and active swimming patterns, perfect for both beginners and enthusiasts.",
-    details: [
-      { label: "Fish Type", value: "Freshwater" },
-      { label: "Size", value: "1.5 - 2.0 Inches" },
-      { label: "Care Level", value: "Beginner Friendly" },
-      { label: "Min. Tank Size", value: "10 Gallons" }
-    ],
-    images: [
-      "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=800",
-      "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=800",
-      "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=800"
-    ]
-  };
+  // const product = {
+  //   name: "Golden Guppy Fish",
+  //   scientificName: "Poecilia reticulata",
+  //   category: "Freshwater Exotic",
+  //   price: 299,
+  //   description: "A vibrant and hardy addition to any community tank. These Golden Guppies exhibit a brilliant metallic sheen and active swimming patterns, perfect for both beginners and enthusiasts.",
+  //   details: [
+  //     { label: "Fish Type", value: "Freshwater" },
+  //     { label: "Size", value: "1.5 - 2.0 Inches" },
+  //     { label: "Care Level", value: "Beginner Friendly" },
+  //     { label: "Min. Tank Size", value: "10 Gallons" }
+  //   ],
+  //   images: [
+  //     "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=800",
+  //     "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=800",
+  //     "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=800"
+  //   ]
+  // };
 
   // Related Products Data
   const relatedProducts = [
@@ -69,7 +71,23 @@ const ProductView = () => {
       image: "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=400"
     }
   ];
+ 
+useEffect(()=>{
+  handilSinglePRoducts()
+},[])
+  // get a single view of products 
 
+  const handilSinglePRoducts = async ()=>{
+    try {
+      const result = await getSingleProductAPI(id)
+      console.log(result.data.data);
+      setProduct(result.data.data)
+      
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
   useEffect(() => {
     setIsLoaded(true);
     const script = document.createElement('script');
@@ -122,8 +140,8 @@ const ProductView = () => {
           <div className="space-y-4 md:space-y-6">
             <div className="img-reveal bg-neutral-50 rounded-sm overflow-hidden aspect-square flex items-center justify-center relative group border border-neutral-100">
               <img 
-                src={product.images[activeImg]} 
-                alt={product.name} 
+                src={product?.images} 
+                alt={product?.name} 
                 className="main-product-img w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
               />
               <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-white px-3 py-1.5 md:px-4 md:py-2 text-[8px] md:text-[9px] font-bold uppercase tracking-widest shadow-sm">
@@ -133,7 +151,7 @@ const ProductView = () => {
             
             {/* Thumbnails */}
             <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2 scrollbar-hide">
-              {product.images.map((img, i) => (
+              {product?.images?.map((img, i) => (
                 <button 
                   key={i} 
                   onClick={() => setActiveImg(i)}
@@ -148,12 +166,12 @@ const ProductView = () => {
           {/* SECTION 2 & 3: DETAILS & ACTIONS (RIGHT) */}
           <div className="flex flex-col justify-center">
             <div className="mb-8 md:mb-10">
-              <span className="text-reveal text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] text-red-600 block mb-3 md:mb-4">{product.category}</span>
-              <h1 className="text-reveal text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-2 leading-tight">{product.name}</h1>
-              <p className="text-reveal text-[10px] md:text-[11px] font-medium text-neutral-400 uppercase tracking-widest italic mb-6">{product.scientificName}</p>
+              <span className="text-reveal text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] text-red-600 block mb-3 md:mb-4">{product?.category}</span>
+              <h1 className="text-reveal text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-2 leading-tight">{product?.name}</h1>
+              <p className="text-reveal text-[10px] md:text-[11px] font-medium text-neutral-400 uppercase tracking-widest italic mb-6">{product?.scientificName}</p>
               
               <div className="text-reveal flex items-baseline gap-4 mb-6 md:mb-8">
-                <span className="text-2xl md:text-3xl font-light tracking-tighter">₹{product.price.toLocaleString()}</span>
+                <span className="text-2xl md:text-3xl font-light tracking-tighter">${product?.price?.toLocaleString()}</span>
                 <span className="text-[9px] md:text-[10px] text-green-600 font-bold uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                   In Stock
@@ -161,13 +179,13 @@ const ProductView = () => {
               </div>
 
               <p className="text-reveal text-neutral-500 font-light leading-relaxed text-sm md:text-base max-w-md">
-                {product.description}
+                {product?.description}
               </p>
             </div>
 
             {/* Product Metadata */}
             <div className="space-y-3 md:space-y-4 mb-8 md:mb-12 border-t border-neutral-100 pt-6 md:pt-8">
-              {product.details.map((detail, idx) => (
+              {product?.details?.map((detail, idx) => (
                 <div key={idx} className="detail-row flex items-center justify-between text-xs md:text-sm py-1">
                   <span className="text-neutral-400 font-light">{detail.label}</span>
                   <div className="flex items-center gap-3">
