@@ -11,15 +11,18 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getSingleProductAPI } from '../../Service/allApi';
+import { useAuth, useClerk } from '@clerk/clerk-react';
 
 const ProductView = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [relatedProduct,setRelatedProduct] = useState([])
   const [product ,setProduct] = useState({})
    const {id} = useParams()
   const navigate =  useNavigate()
-
+   const {isSignedIn} =  useAuth()
+  const {openSignIn,openSignUp} = useClerk()
   // Main Product Data
   // const product = {
   //   name: "Golden Guppy Fish",
@@ -41,53 +44,26 @@ const ProductView = () => {
   // };
 
   // Related Products Data
-  const relatedProducts = [
-    {
-      id: 1,
-      name: "Neon Tetra",
-      category: "Schooling Fish",
-      price: 150,
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 2,
-      name: "Blue Betta Splendens",
-      category: "Exotic Solo",
-      price: 450,
-      image: "https://images.unsplash.com/photo-1534043464124-3be32fe000c9?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 3,
-      name: "Cherry Shrimp",
-      category: "Invertebrates",
-      price: 80,
-      image: "https://images.unsplash.com/photo-1610473068502-0e4f21469e3a?auto=format&fit=crop&q=80&w=400"
-    },
-    {
-      id: 4,
-      name: "Dwarf Gourami",
-      category: "Centerpiece Fish",
-      price: 350,
-      image: "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=400"
-    }
-  ];
- 
+  
 useEffect(()=>{
   handilSinglePRoducts()
-},[])
+},[id])
   // get a single view of products 
 
   const handilSinglePRoducts = async ()=>{
     try {
       const result = await getSingleProductAPI(id)
-      console.log(result.data.data);
-      setProduct(result.data.data)
-      
+      console.log(result.data.product);
+      setProduct(result.data.product)
+      setRelatedProduct(result.data.relatedProduct)
     } catch (error) {
       console.log(error);
       
     }
   }
+  useEffect(()=>{
+console.log(relatedProduct);
+},[relatedProduct])
   useEffect(() => {
     setIsLoaded(true);
     const script = document.createElement('script');
@@ -253,12 +229,14 @@ useEffect(()=>{
           </div>
 
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {relatedProducts.map((item) => (
-              <div key={item.id} className="related-reveal group cursor-pointer">
+            {relatedProduct.map((item) => (
+              <div  onClick={()=>{!isSignedIn ? openSignIn({
+                     afterSignInUrl: `/view/${item?._id}/aqua`
+                  }) : navigate(`/view/${item?._id}/aqua`)}}  key={item._id} className="related-reveal group cursor-pointer">
                 <div className="aspect-[4/5] bg-neutral-50 rounded-sm overflow-hidden mb-4 relative">
                   <img 
-                    src={item.image} 
-                    alt={item.name} 
+                    src={item?.image} 
+                    alt={item?.name} 
                     className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500"></div>
@@ -271,7 +249,7 @@ useEffect(()=>{
                 <div>
                   <div className="flex justify-between items-start mb-1">
                     <h3 className="text-xs md:text-sm font-medium tracking-tight text-neutral-800">{item.name}</h3>
-                    <span className="text-[11px] md:text-xs font-light">₹{item.price}</span>
+                    <span className="text-[11px] md:text-xs font-light">${item?.price}</span>
                   </div>
                   <span className="text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-neutral-300">{item.category}</span>
                 </div>
