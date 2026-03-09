@@ -1,215 +1,417 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from "@clerk/clerk-react";
+import {useNavigate} from 'react-router-dom'
+import { 
+  PackagePlus, 
+  Image as ImageIcon, 
+  X, 
+  Droplets, 
+  Trash2, 
+  CheckCircle2, 
+  AlertCircle,
+  ChevronDown
+} from 'lucide-react';
+import { createProductAPI } from '../../Service/allApi';
 
-const AddProduct = () => {
-  const formRef = useRef(null);
-  const toastRef = useRef(null);
+const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: 'Fish',
+    waterType: 'Freshwater',
+    difficulty: 'Beginner',
+    price: '',
+    stock: '',
+    isFeatured: false
+  });
+
+  const [images, setImages] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fileName, setFileName] = useState('');
+  const [status, setStatus] = useState(null); // 'success' | 'error' | null
 
+  const modalRef = useRef(null);
+  const overlayRef = useRef(null);
+  const inputsRef = useRef([]);
+  const imagePreviewRef = useRef(null);
+  const navigate =  useNavigate()
+  const {getToken} = useAuth()
+
+  // Load GSAP via CDN and run animations for the modal
   useEffect(() => {
-    // Inject GSAP script dynamically to ensure it's available
+    if (!isOpen) return;
+
     const script = document.createElement('script');
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js";
     script.async = true;
     script.onload = () => {
-      if (window.gsap) {
-        const gsap = window.gsap;
+      const gsap = window.gsap;
+      if (gsap) {
         const ctx = gsap.context(() => {
-          gsap.to(".animate-item", {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            stagger: 0.1,
-            ease: "power3.out"
+          // Overlay fade in
+          gsap.fromTo(overlayRef.current, 
+            { opacity: 0 }, 
+            { opacity: 1, duration: 0.4, ease: 'power2.out' }
+          );
+
+          // Modal slide and scale up
+          gsap.fromTo(modalRef.current, 
+            { y: 50, scale: 0.95, opacity: 0 }, 
+            { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.1 }
+          );
+
+          // Stagger inputs
+          gsap.from(inputsRef.current, {
+            y: 20,
+            opacity: 0,
+            duration: 0.4,
+            stagger: 0.05,
+            ease: 'power2.out',
+            delay: 0.4
           });
-        }, formRef);
-      }
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFileName(file.name);
-    }
-  };
-
-  const removeFile = () => {
-    setFileName('');
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const gsap = window.gsap;
-
-    // Simulate API Call
-    setTimeout(() => {
-      if (gsap && toastRef.current) {
-        // Success feedback
-        gsap.to(toastRef.current, { 
-          opacity: 1, 
-          y: 0, 
-          duration: 0.4 
         });
-        
-        setTimeout(() => {
-          gsap.to(toastRef.current, { 
-            opacity: 0, 
-            y: 10, 
-            duration: 0.4 
-          });
-          setIsSubmitting(false);
-          setFileName('');
-          e.target.reset();
-        }, 3000);
-      } else {
-        setIsSubmitting(false);
       }
-    }, 1000);
+    };
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [isOpen]);
+
+  console.log(formData);
+  
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({...prev,[name]: type === 'checkbox' ? checked : value
+    }));
   };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      url: URL.createObjectURL(file),
+      file
+    }));
+    
+    setImages(prev => [...prev, ...newImages]);
+
+    setTimeout(() => {
+      if (window.gsap) {
+        window.gsap.from(".image-thumb", {
+          scale: 0,
+          opacity: 0,
+          duration: 0.3,
+          stagger: 0.1,
+          ease: 'back.out(1.7)'
+        });
+      }
+    }, 0);
+  };
+
+  const removeImage = (id) => {
+    setImages(prev => prev.filter(img => img.id !== id));
+  };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  setIsSubmitting(true);
+
+  try {
+
+    const token = await getToken();
+
+    const reqBody = new FormData();
+
+    reqBody.append("name", formData.name);
+    reqBody.append("description", formData.description);
+    reqBody.append("category", formData.category);
+    reqBody.append("waterType", formData.waterType);
+    reqBody.append("difficulty", formData.difficulty);
+    reqBody.append("price", formData.price);
+    reqBody.append("stock", formData.stock);
+    reqBody.append("isFeatured", formData.isFeatured);
+
+    images.forEach((img) => {
+      reqBody.append("images", img.file);
+    });
+
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
+
+    const result = await createProductAPI(reqBody, reqHeader);
+
+    if (result.status === 201) {
+      setStatus("success");
+      navigate("/admin/product")
+      setIsModalOpen(false)
+    }
+
+  } catch (error) {
+    console.log(error);
+    setStatus("error");
+  }
+
+  setIsSubmitting(false);
+};
+
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-8 font-sans">
-      {/* Form Container */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {/* Overlay */}
       <div 
-        ref={formRef}
-        className="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-slate-100 overflow-hidden"
+        ref={overlayRef}
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+         onClick={()=>setIsModalOpen(false)}
+      ></div>
+      
+      {/* Modal Container */}
+      <div 
+        ref={modalRef}
+        className="relative w-full max-w-5xl bg-slate-50 rounded-3xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
       >
-        {/* Header */}
-        <div className="bg-slate-50 border-b border-slate-100 p-6">
-          <h1 className="text-2xl font-bold text-slate-800 animate-item opacity-0 translate-y-5">
-            Add New Product
-          </h1>
-          <p className="text-slate-500 text-sm animate-item opacity-0 translate-y-5">
-            Enter the details below to add a new item to the Aqua Store inventory.
-          </p>
+        {/* Header Section */}
+        <header className="sticky top-0 bg-white border-b border-slate-100 p-6 sm:px-8 flex items-center justify-between z-20">
+          <div className="flex items-center gap-4">
+            <div className="bg-red-600 p-2.5 rounded-xl text-white shadow-lg shadow-red-200">
+              <PackagePlus size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Add New Product</h1>
+              <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Fill in details to update Aqua Store inventory.</p>
+            </div>
+          </div>
+          
+          <button 
+             onClick={()=>setIsModalOpen(false)}
+            className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+          >
+            <X size={24} />
+          </button>
+        </header>
+
+        <div className="overflow-y-auto p-6 sm:p-8">
+          {/* Status Message */}
+          {status === 'success' && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center gap-3 animate-pulse">
+              <CheckCircle2 size={20} />
+              <p className="font-medium">Product added successfully!</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* Main Form Section */}
+            <div className="lg:col-span-2 space-y-6">
+              <form id="product-form" onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  {/* Product Name */}
+                  <div className="md:col-span-2" ref={el => inputsRef.current[0] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Product Name</label>
+                    <input 
+                      type="text" 
+                      name="name"
+                      required
+                      placeholder="e.g. Golden Guppy Fish"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="md:col-span-2" ref={el => inputsRef.current[1] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                    <textarea 
+                      name="description"
+                      rows="3"
+                      required
+                      placeholder="Describe the product..."
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-slate-400 resize-none"
+                    ></textarea>
+                  </div>
+
+                  {/* Category Selection */}
+                  <div ref={el => inputsRef.current[2] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                    <div className="relative">
+                      <select 
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-white cursor-pointer"
+                      >
+                        <option>Fish</option>
+                        <option>Plant</option>
+                        <option>Accessories</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    </div>
+                  </div>
+
+                  {/* Conditional Water Type */}
+                  {formData.category !== 'Accessories' && (
+                    <div ref={el => inputsRef.current[3] = el}>
+                      <label className="block text-sm font-semibold text-slate-700 mb-2">Water Type</label>
+                      <div className="relative">
+                        <select 
+                          name="waterType"
+                          value={formData.waterType}
+                          onChange={handleInputChange}
+                          className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-white cursor-pointer"
+                        >
+                          <option>Freshwater</option>
+                          <option>Saltwater</option>
+                          <option>Brackish</option>
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Difficulty Level */}
+                  <div ref={el => inputsRef.current[4] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Difficulty Level</label>
+                    <div className="relative">
+                      <select 
+                        name="difficulty"
+                        value={formData.difficulty}
+                        onChange={handleInputChange}
+                        className="w-full appearance-none px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-white cursor-pointer"
+                      >
+                        <option>Beginner</option>
+                        <option>Intermediate</option>
+                        <option>Expert</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    </div>
+                  </div>
+
+                  {/* Pricing */}
+                  <div ref={el => inputsRef.current[5] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Price (₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
+                      <input 
+                        type="number" 
+                        name="price"
+                        required
+                        placeholder="0.00"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        className="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Stock Quantity */}
+                  <div ref={el => inputsRef.current[6] = el}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Quantity</label>
+                    <input 
+                      type="number" 
+                      name="stock"
+                      required
+                      placeholder="e.g. 20"
+                      value={formData.stock}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Featured Toggle */}
+                  <div className="md:col-span-2 flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100" ref={el => inputsRef.current[7] = el}>
+                    <div>
+                      <h4 className="font-semibold text-slate-800">Featured Product</h4>
+                      <p className="text-xs text-slate-500">Show on Homepage</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        name="isFeatured"
+                        checked={formData.isFeatured}
+                        onChange={handleInputChange}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Sidebar - Image Upload */}
+            <aside className="space-y-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider flex items-center gap-2">
+                  <ImageIcon size={18} className="text-red-600" />
+                  Images
+                </h3>
+                
+                <div className="space-y-4">
+                  <label className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:bg-red-50 hover:border-red-300 transition-all">
+                    <div className="flex flex-col items-center justify-center">
+                      <ImageIcon size={20} className="text-slate-400 group-hover:text-red-500 mb-2" />
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Upload Files</p>
+                    </div>
+                    <input type="file" multiple className="hidden" onChange={handleImageUpload} accept="image/*" />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2" ref={imagePreviewRef}>
+                    {images.map((img) => (
+                      <div key={img.id} className="image-thumb relative group aspect-square rounded-xl overflow-hidden border border-slate-100 shadow-sm">
+                        <img src={img.url} alt="preview" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => removeImage(img.id)}
+                          className="absolute top-1 right-1 p-1 bg-white text-red-600 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 text-white rounded-2xl p-5 relative overflow-hidden">
+                <div className="relative z-10">
+                  <h4 className="text-xs font-bold mb-1 uppercase tracking-widest text-red-500">
+                    Pro Tip
+                  </h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Ensure images are high resolution and well-lit to improve store aesthetics.
+                  </p>
+                </div>
+                <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-red-600/10 rounded-full blur-xl"></div>
+              </div>
+            </aside>
+          </div>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product Name */}
-            <div className="space-y-2 animate-item opacity-0 translate-y-5">
-              <label className="text-sm font-semibold text-slate-700">Product Name</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Aquamarine Watch" 
-                className="w-full p-3 rounded-lg border border-slate-200 text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all" 
-                required 
-              />
-            </div>
-
-            {/* Category */}
-            <div className="space-y-2 animate-item opacity-0 translate-y-5">
-              <label className="text-sm font-semibold text-slate-700">Category</label>
-              <select className="w-full p-3 rounded-lg border border-slate-200 text-slate-800 bg-white focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all">
-                <option value="">Select Category</option>
-                <option value="accessories">Accessories</option>
-                <option value="electronics">Electronics</option>
-                <option value="apparel">Apparel</option>
-                <option value="home">Home Decor</option>
-              </select>
-            </div>
-
-            {/* Price */}
-            <div className="space-y-2 animate-item opacity-0 translate-y-5">
-              <label className="text-sm font-semibold text-slate-700">Price ($)</label>
-              <input 
-                type="number" 
-                step="0.01" 
-                placeholder="0.00" 
-                className="w-full p-3 rounded-lg border border-slate-200 text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all" 
-                required 
-              />
-            </div>
-
-            {/* Stock */}
-            <div className="space-y-2 animate-item opacity-0 translate-y-5">
-              <label className="text-sm font-semibold text-slate-700">Stock Quantity</label>
-              <input 
-                type="number" 
-                placeholder="0" 
-                className="w-full p-3 rounded-lg border border-slate-200 text-slate-800 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all" 
-                required 
-              />
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2 animate-item opacity-0 translate-y-5">
-            <label className="text-sm font-semibold text-slate-700">Product Description</label>
-            <textarea 
-              rows="4" 
-              placeholder="Describe the key features of the product..." 
-              className="w-full p-3 rounded-lg border border-slate-200 text-slate-800 resize-none focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all"
-            ></textarea>
-          </div>
-
-          {/* Image Upload */}
-          <div className="space-y-2 animate-item opacity-0 translate-y-5">
-            <label className="text-sm font-semibold text-slate-700">Product Image</label>
-            
-            {!fileName ? (
-              <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-8 cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all group">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-slate-400 group-hover:text-red-500 mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="text-sm text-slate-500">Click to upload or drag and drop</span>
-                <span className="text-xs text-slate-400 mt-1">PNG, JPG up to 5MB</span>
-                <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-              </label>
-            ) : (
-              <div className="p-3 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-200">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center text-red-600">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"/></svg>
-                  </div>
-                  <span className="text-sm text-slate-600 truncate max-w-[200px]">{fileName}</span>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={removeFile}
-                  className="text-red-500 text-xs font-bold uppercase tracking-wider hover:underline"
-                >
-                  Remove
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-4 animate-item opacity-0 translate-y-5">
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className={`w-full ${isSubmitting ? 'bg-red-400' : 'bg-red-600 hover:bg-red-700'} text-white font-bold py-4 rounded-xl shadow-lg shadow-red-200 transition-all active:scale-[0.98] flex items-center justify-center`}
-            >
-              {isSubmitting ? (
-                <svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : null}
-              {isSubmitting ? 'Adding Product...' : 'Add Product'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Success Toast */}
-      <div 
-        ref={toastRef}
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl opacity-0 translate-y-10 pointer-events-none transition-all duration-300 z-50"
-      >
-        Product successfully added!
+        {/* Footer Actions */}
+        <footer className="sticky bottom-0 bg-white border-t border-slate-100 p-6 flex justify-end gap-3 z-20">
+          <button 
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors uppercase tracking-tight"
+          >
+            Cancel
+          </button>
+          <button 
+            form="product-form"
+            type="submit"
+            disabled={isSubmitting}
+            className={`px-10 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm shadow-xl shadow-red-200 hover:bg-red-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 uppercase tracking-tight ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : 'Save Product'}
+          </button>
+        </footer>
       </div>
     </div>
   );

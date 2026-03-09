@@ -17,6 +17,7 @@ import Category from './Admin/Pages/Category';
 import Orders from './Admin/Pages/Oders';
 import Users from './Admin/Pages/Users';
 import Analytics from './Admin/Pages/Analytics';
+import AddProduct from './Admin/component/AddProduct';
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
 const About = lazy(() => import('./user/pages/About'));
@@ -69,7 +70,7 @@ function App() {
 
           {/* 404 */}
           <Route path="*" element={<Pnf />} />
-
+     <Route path='/admin/:id/editProduct' element={<AddProduct />} />
         </Routes>
       </Suspense>
 

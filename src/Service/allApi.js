@@ -37,3 +37,9 @@ export const createOrderAPI = (body, headers) =>
 
 export const getMyOrdersAPI = (headers) =>
   commonAPI("GET", `${SERVER_URL}/orders/my`, {}, headers);
+
+
+
+//  admin products 
+export const getAllProductsAdminAPI = (headers) =>
+  commonAPI("GET", `${SERVER_URL}/products/admin/products`, {}, headers);

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { deleteProductAPI, getAllProductsAdminAPI } from "../../Service/allApi";
+import { useAuth } from "@clerk/clerk-react";
 import { 
   Plus, 
   Pencil, 
@@ -11,22 +13,19 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import AddProduct from '../component/AddProduct';
 
 const Product = () => {
   // Mock Data for Aqua Store
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Deep Sea Regulator', category: 'Diving Gear', price: 450.00, stock: 12, image: 'https://images.unsplash.com/photo-1530124564343-6a59910d328d?auto=format&fit=crop&q=80&w=100' },
-    { id: 2, name: 'Coral Safe Sunscreen', category: 'Skincare', price: 25.50, stock: 145, image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&q=80&w=100' },
-    { id: 3, name: 'Professional Fins X3', category: 'Diving Gear', price: 120.00, stock: 45, image: 'https://images.unsplash.com/photo-1601662528567-526cd06f6582?auto=format&fit=crop&q=80&w=100' },
-    { id: 4, name: 'Underwater Torch', category: 'Accessories', price: 85.00, stock: 8, image: 'https://images.unsplash.com/photo-1518155317743-a8ff43ea6f5f?auto=format&fit=crop&q=80&w=100' },
-    { id: 5, name: 'Neoprene Wetsuit 5mm', category: 'Apparel', price: 210.00, stock: 24, image: 'https://images.unsplash.com/photo-1582739443210-918991667c46?auto=format&fit=crop&q=80&w=100' },
-  ]);
+  const [products, setProducts] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+
+  const { getToken } = useAuth();
   const tableRef = useRef(null);
   const deleteModalRef = useRef(null);
   const addModalRef = useRef(null);
@@ -79,29 +78,84 @@ const Product = () => {
     }
   }, [isDeleteModalOpen]);
 
-  const handleDelete = () => {
-    if (!gsapRef.current) {
-        setProducts(products.filter(p => p.id !== selectedProduct.id));
-        setIsDeleteModalOpen(false);
-        return;
-    }
+ const handleDelete = async () => {
 
-    const row = document.getElementById(`product-row-${selectedProduct.id}`);
-    gsapRef.current.to(row, {
-      opacity: 0,
-      x: -20,
-      duration: 0.3,
-      onComplete: () => {
-        setProducts(products.filter(p => p.id !== selectedProduct.id));
+  try {
+
+    const token = await getToken();
+
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
+
+    const result = await deleteProductAPI(selectedProduct._id, reqHeader);
+
+    if (result.status === 200) {
+
+      // If GSAP not loaded → delete normally
+      if (!gsapRef.current) {
+
+        setProducts(products.filter(p => p._id !== selectedProduct._id));
         setIsDeleteModalOpen(false);
         setSelectedProduct(null);
+        return;
+
       }
-    });
+
+      // Animate row deletion
+      const row = document.getElementById(`product-row-${selectedProduct._id}`);
+
+      gsapRef.current.to(row, {
+        opacity: 0,
+        x: -20,
+        duration: 0.3,
+        onComplete: () => {
+
+          setProducts(products.filter(p => p._id !== selectedProduct._id));
+          setIsDeleteModalOpen(false);
+          setSelectedProduct(null);
+
+        }
+      });
+
+    }
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
+
+  // const filteredProducts = products.filter(p => 
+  //   p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
+
+  // get all products 
+    const getProducts = async () => {
+    try {
+
+      const token = await getToken();
+
+      const reqHeader = {
+        Authorization: `Bearer ${token}`
+      };
+
+      const result = await getAllProductsAdminAPI(reqHeader);
+
+      if (result.status === 200) {
+        setProducts(result.data.data);
+      }
+
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    getProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
@@ -175,7 +229,7 @@ const Product = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <tr 
                   key={product.id} 
                   id={`product-row-${product.id}`}
@@ -183,7 +237,7 @@ const Product = () => {
                 >
                   <td className="px-6 py-4">
                     <img 
-                      src={product.image} 
+                      src={product?.images?.[1]} 
                       alt={product.name} 
                       className="w-12 h-12 rounded-xl object-cover bg-slate-100"
                     />
@@ -222,6 +276,7 @@ const Product = () => {
                         onClick={() => {
                           setSelectedProduct(product);
                           setIsDeleteModalOpen(true);
+                          handleDelete(product?._id)
                         }}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -272,65 +327,14 @@ const Product = () => {
 
       {/* Add Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div 
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          {/* <div 
             ref={addModalRef}
             className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl"
           >
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h2 className="text-xl font-bold">New Product</h2>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Product Name</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="e.g. Scuba Mask" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Category</label>
-                  <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all appearance-none">
-                    <option>Diving Gear</option>
-                    <option>Accessories</option>
-                    <option>Apparel</option>
-                    <option>Skincare</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
-                    <DollarSign size={14} /> Price (USD)
-                  </label>
-                  <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="0.00" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700 flex items-center gap-1">
-                    <Database size={14} /> Initial Stock
-                  </label>
-                  <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="10" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Product Image URL</label>
-                <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all" placeholder="https://images..." />
-              </div>
-              <div className="pt-4 flex gap-4">
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-3 text-slate-600 font-semibold hover:bg-slate-50 rounded-xl transition-colors"
-                >
-                  Discard
-                </button>
-                <button className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-200 transition-all active:scale-95">
-                  Save Product
-                </button>
-              </div>
-            </div>
-          </div>
+          
+          </div> */}
+           <AddProduct setIsModalOpen={setIsModalOpen} />
         </div>
       )}
     </div>
