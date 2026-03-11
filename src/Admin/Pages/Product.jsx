@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { deleteProductAPI, getAllProductsAdminAPI } from "../../Service/allApi";
 import { useAuth } from "@clerk/clerk-react";
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Search, 
-  Package, 
-  Layers, 
-  DollarSign, 
-  Database, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Package,
+  Layers,
+  DollarSign,
+  Database,
   X,
   AlertCircle
 } from 'lucide-react';
 import AddProduct from '../component/AddProduct';
+import { useNavigate } from 'react-router-dom';
 
 const Product = () => {
   // Mock Data for Aqua Store
@@ -23,8 +24,8 @@ const Product = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-
-
+  const [isEditModalOpen, setEditModalOpen] = useState(false)
+  const navigate = useNavigate()
   const { getToken } = useAuth();
   const tableRef = useRef(null);
   const deleteModalRef = useRef(null);
@@ -51,7 +52,7 @@ const Product = () => {
   const runInitialAnimation = () => {
     if (gsapRef.current && tableRef.current) {
       const rows = tableRef.current.querySelectorAll('tr.product-row');
-      gsapRef.current.fromTo(rows, 
+      gsapRef.current.fromTo(rows,
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: 'power2.out' }
       );
@@ -61,7 +62,7 @@ const Product = () => {
   // GSAP for Add Modal
   useEffect(() => {
     if (isModalOpen && gsapRef.current && addModalRef.current) {
-      gsapRef.current.fromTo(addModalRef.current, 
+      gsapRef.current.fromTo(addModalRef.current,
         { opacity: 0, scale: 0.95 },
         { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.7)' }
       );
@@ -71,69 +72,69 @@ const Product = () => {
   // GSAP for Delete Modal
   useEffect(() => {
     if (isDeleteModalOpen && gsapRef.current && deleteModalRef.current) {
-      gsapRef.current.fromTo(deleteModalRef.current, 
+      gsapRef.current.fromTo(deleteModalRef.current,
         { opacity: 0, y: -20 },
         { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
       );
     }
   }, [isDeleteModalOpen]);
 
- const handleDelete = async () => {
+  const handleDelete = async () => {
 
-  try {
+    try {
 
-    const token = await getToken();
+      const token = await getToken();
 
-    const reqHeader = {
-      Authorization: `Bearer ${token}`
-    };
+      const reqHeader = {
+        Authorization: `Bearer ${token}`
+      };
 
-    const result = await deleteProductAPI(selectedProduct._id, reqHeader);
+      const result = await deleteProductAPI(selectedProduct._id, reqHeader);
 
-    if (result.status === 200) {
+      if (result.status === 200) {
 
-      // If GSAP not loaded → delete normally
-      if (!gsapRef.current) {
-
-        setProducts(products.filter(p => p._id !== selectedProduct._id));
-        setIsDeleteModalOpen(false);
-        setSelectedProduct(null);
-        return;
-
-      }
-
-      // Animate row deletion
-      const row = document.getElementById(`product-row-${selectedProduct._id}`);
-
-      gsapRef.current.to(row, {
-        opacity: 0,
-        x: -20,
-        duration: 0.3,
-        onComplete: () => {
+        // If GSAP not loaded → delete normally
+        if (!gsapRef.current) {
 
           setProducts(products.filter(p => p._id !== selectedProduct._id));
           setIsDeleteModalOpen(false);
           setSelectedProduct(null);
+          return;
 
         }
-      });
+
+        // Animate row deletion
+        const row = document.getElementById(`product-row-${selectedProduct._id}`);
+
+        gsapRef.current.to(row, {
+          opacity: 0,
+          x: -20,
+          duration: 0.3,
+          onComplete: () => {
+
+            setProducts(products.filter(p => p._id !== selectedProduct._id));
+            setIsDeleteModalOpen(false);
+            setSelectedProduct(null);
+
+          }
+        });
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
 
     }
 
-  } catch (error) {
-
-    console.log(error);
-
-  }
-
-};
+  };
 
   // const filteredProducts = products.filter(p => 
   //   p.name.toLowerCase().includes(searchTerm.toLowerCase())
   // );
 
   // get all products 
-    const getProducts = async () => {
+  const getProducts = async () => {
     try {
 
       const token = await getToken();
@@ -165,8 +166,8 @@ const Product = () => {
           <h1 className="text-3xl font-bold tracking-tight">Aqua Store Inventory</h1>
           <p className="text-slate-500 mt-1">Manage your aquatic products and stock levels.</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition-all active:scale-95 shadow-lg shadow-red-200"
         >
@@ -201,8 +202,8 @@ const Product = () => {
         <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search products..."
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-red-500 transition-all outline-none"
               value={searchTerm}
@@ -230,15 +231,15 @@ const Product = () => {
             </thead>
             <tbody>
               {products.map((product) => (
-                <tr 
-                  key={product.id} 
+                <tr
+                  key={product?._id}
                   id={`product-row-${product.id}`}
                   className="product-row border-b border-slate-50 hover:bg-slate-50/50 transition-colors"
                 >
                   <td className="px-6 py-4">
-                    <img 
-                      src={product?.images?.[1]} 
-                      alt={product.name} 
+                    <img
+                      src={product?.images?.[1]}
+                      alt={product.name}
                       className="w-12 h-12 rounded-xl object-cover bg-slate-100"
                     />
                   </td>
@@ -260,8 +261,8 @@ const Product = () => {
                         {product.stock} units
                       </span>
                       <div className="w-20 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${product.stock < 10 ? 'bg-red-500' : 'bg-emerald-500'}`} 
+                        <div
+                          className={`h-full rounded-full ${product.stock < 10 ? 'bg-red-500' : 'bg-emerald-500'}`}
                           style={{ width: `${Math.min(product.stock, 100)}%` }}
                         ></div>
                       </div>
@@ -269,14 +270,19 @@ const Product = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <button
+                        onClick={() => {
+                          navigate(`/admin/${product._id}/editProduct`);
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
                         <Pencil size={18} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedProduct(product);
                           setIsDeleteModalOpen(true);
-                         
+
                         }}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -294,7 +300,7 @@ const Product = () => {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div 
+          <div
             ref={deleteModalRef}
             className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl"
           >
@@ -307,13 +313,13 @@ const Product = () => {
                 Are you sure you want to delete <span className="font-semibold text-slate-900">"{selectedProduct?.name}"</span>? This action cannot be undone.
               </p>
               <div className="flex gap-4 w-full">
-                <button 
+                <button
                   onClick={() => setIsDeleteModalOpen(false)}
                   className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleDelete}
                   className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors"
                 >
@@ -328,15 +334,11 @@ const Product = () => {
       {/* Add Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          {/* <div 
-            ref={addModalRef}
-            className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl"
-          >
-          
-          </div> */}
-           <AddProduct setIsModalOpen={setIsModalOpen} />
+          <AddProduct setIsModalOpen={setIsModalOpen} />
         </div>
       )}
+      {/* edit Product Modal */}
+  
     </div>
   );
 };

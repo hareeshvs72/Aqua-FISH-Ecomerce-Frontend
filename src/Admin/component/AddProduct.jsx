@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from "@clerk/clerk-react";
-import {useNavigate} from 'react-router-dom'
-import { 
-  PackagePlus, 
-  Image as ImageIcon, 
-  X, 
-  Droplets, 
-  Trash2, 
-  CheckCircle2, 
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  PackagePlus,
+  Image as ImageIcon,
+  X,
+  Droplets,
+  Trash2,
+  CheckCircle2,
   AlertCircle,
   ChevronDown
 } from 'lucide-react';
-import { createProductAPI } from '../../Service/allApi';
+import { createProductAPI, getSingleProductAPI, updateProductAPI } from '../../Service/allApi';
 
-const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
+const AddProduct = ({ isOpen = true, onClose, setIsModalOpen }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -33,9 +33,9 @@ const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
   const overlayRef = useRef(null);
   const inputsRef = useRef([]);
   const imagePreviewRef = useRef(null);
-  const navigate =  useNavigate()
-  const {getToken} = useAuth()
-
+  const navigate = useNavigate()
+  const { getToken } = useAuth()
+  const { id } = useParams()
   // Load GSAP via CDN and run animations for the modal
   useEffect(() => {
     if (!isOpen) return;
@@ -48,14 +48,14 @@ const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
       if (gsap) {
         const ctx = gsap.context(() => {
           // Overlay fade in
-          gsap.fromTo(overlayRef.current, 
-            { opacity: 0 }, 
+          gsap.fromTo(overlayRef.current,
+            { opacity: 0 },
             { opacity: 1, duration: 0.4, ease: 'power2.out' }
           );
 
           // Modal slide and scale up
-          gsap.fromTo(modalRef.current, 
-            { y: 50, scale: 0.95, opacity: 0 }, 
+          gsap.fromTo(modalRef.current,
+            { y: 50, scale: 0.95, opacity: 0 },
             { y: 0, scale: 1, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.1 }
           );
 
@@ -78,13 +78,67 @@ const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
   }, [isOpen]);
 
   console.log(formData);
-  
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({...prev,[name]: type === 'checkbox' ? checked : value
+    setFormData(prev => ({
+      ...prev, [name]: type === 'checkbox' ? checked : value
     }));
   };
+
+
+  // get a single product 
+  useEffect(() => {
+  if (id) {
+    getSingleProduct();
+  }
+}, [id]);
+
+  const getSingleProduct = async () => {
+
+  try {
+
+    const token = await getToken();
+
+    const reqHeader = {
+      Authorization: `Bearer ${token}`
+    };
+
+    const result = await getSingleProductAPI(id, reqHeader);
+
+    if (result.status === 200) {
+
+      const product = result.data.product;
+
+      setFormData({
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        waterType: product.waterType,
+        difficulty: product.difficulty,
+        price: product.price,
+        stock: product.stock,
+        isFeatured: product.isFeatured
+      });
+
+      // show existing images
+      setImages(
+        product.images.map((url) => ({
+          id: Math.random().toString(36).substring(2),
+          url
+        }))
+      );
+
+    }
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+};
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -93,7 +147,7 @@ const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
       url: URL.createObjectURL(file),
       file
     }));
-    
+
     setImages(prev => [...prev, ...newImages]);
 
     setTimeout(() => {
@@ -108,7 +162,13 @@ const AddProduct = ({ isOpen = true, onClose , setIsModalOpen}) => {
       }
     }, 0);
   };
+  // handile naviagte 
 
+  const handileNAvigate = () => {
+    if (id) {
+      navigate("/admin")
+    }
+  }
   const removeImage = (id) => {
     setImages(prev => prev.filter(img => img.id !== id));
   };
@@ -134,24 +194,44 @@ const handleSubmit = async (e) => {
     reqBody.append("isFeatured", formData.isFeatured);
 
     images.forEach((img) => {
-      reqBody.append("images", img.file);
+      if (img.file) {
+        reqBody.append("images", img.file);
+      }
     });
 
     const reqHeader = {
       Authorization: `Bearer ${token}`
     };
 
-    const result = await createProductAPI(reqBody, reqHeader);
+    let result;
 
-    if (result.status === 201) {
+    if (id) {
+      result = await updateProductAPI(id, reqBody, reqHeader);
+      console.log(result);
+    } else {
+      result = await createProductAPI(reqBody, reqHeader);
+    }
+
+    if (result.status === 200 || result.status === 201) {
+
       setStatus("success");
-      navigate("/admin/product")
-      setIsModalOpen(false)
+
+      setTimeout(() => {
+        navigate("/admin/product");
+
+        if (setIsModalOpen) {
+          setIsModalOpen(false);
+        }
+
+      }, 1000);
+
     }
 
   } catch (error) {
+
     console.log(error);
     setStatus("error");
+
   }
 
   setIsSubmitting(false);
@@ -162,14 +242,14 @@ const handleSubmit = async (e) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Overlay */}
-      <div 
+      <div
         ref={overlayRef}
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
-         onClick={()=>setIsModalOpen(false)}
+        onClick={() => { setIsModalOpen(false) }}
       ></div>
-      
+
       {/* Modal Container */}
-      <div 
+      <div
         ref={modalRef}
         className="relative w-full max-w-5xl bg-slate-50 rounded-3xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
       >
@@ -180,13 +260,19 @@ const handleSubmit = async (e) => {
               <PackagePlus size={24} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Add New Product</h1>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">{id ? "Update Product" : "Add New Product"}</h1>
               <p className="text-xs sm:text-sm text-slate-500 hidden sm:block">Fill in details to update Aqua Store inventory.</p>
             </div>
           </div>
-          
-          <button 
-             onClick={()=>setIsModalOpen(false)}
+
+          <button
+            onClick={() => {
+              if (id) {
+                handileNAvigate();
+              } else {
+                setIsModalOpen(false);
+              }
+            }}
             className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
           >
             <X size={24} />
@@ -203,17 +289,17 @@ const handleSubmit = async (e) => {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             {/* Main Form Section */}
             <div className="lg:col-span-2 space-y-6">
               <form id="product-form" onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   {/* Product Name */}
                   <div className="md:col-span-2" ref={el => inputsRef.current[0] = el}>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Product Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="name"
                       required
                       placeholder="e.g. Golden Guppy Fish"
@@ -226,7 +312,7 @@ const handleSubmit = async (e) => {
                   {/* Description */}
                   <div className="md:col-span-2" ref={el => inputsRef.current[1] = el}>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
-                    <textarea 
+                    <textarea
                       name="description"
                       rows="3"
                       required
@@ -241,7 +327,7 @@ const handleSubmit = async (e) => {
                   <div ref={el => inputsRef.current[2] = el}>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
                     <div className="relative">
-                      <select 
+                      <select
                         name="category"
                         value={formData.category}
                         onChange={handleInputChange}
@@ -260,7 +346,7 @@ const handleSubmit = async (e) => {
                     <div ref={el => inputsRef.current[3] = el}>
                       <label className="block text-sm font-semibold text-slate-700 mb-2">Water Type</label>
                       <div className="relative">
-                        <select 
+                        <select
                           name="waterType"
                           value={formData.waterType}
                           onChange={handleInputChange}
@@ -279,7 +365,7 @@ const handleSubmit = async (e) => {
                   <div ref={el => inputsRef.current[4] = el}>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Difficulty Level</label>
                     <div className="relative">
-                      <select 
+                      <select
                         name="difficulty"
                         value={formData.difficulty}
                         onChange={handleInputChange}
@@ -298,8 +384,8 @@ const handleSubmit = async (e) => {
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Price (₹)</label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₹</span>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         name="price"
                         required
                         placeholder="0.00"
@@ -313,8 +399,8 @@ const handleSubmit = async (e) => {
                   {/* Stock Quantity */}
                   <div ref={el => inputsRef.current[6] = el}>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Stock Quantity</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       name="stock"
                       required
                       placeholder="e.g. 20"
@@ -331,12 +417,12 @@ const handleSubmit = async (e) => {
                       <p className="text-xs text-slate-500">Show on Homepage</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         name="isFeatured"
                         checked={formData.isFeatured}
                         onChange={handleInputChange}
-                        className="sr-only peer" 
+                        className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                     </label>
@@ -352,7 +438,7 @@ const handleSubmit = async (e) => {
                   <ImageIcon size={18} className="text-red-600" />
                   Images
                 </h3>
-                
+
                 <div className="space-y-4">
                   <label className="group flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:bg-red-50 hover:border-red-300 transition-all">
                     <div className="flex flex-col items-center justify-center">
@@ -366,7 +452,7 @@ const handleSubmit = async (e) => {
                     {images.map((img) => (
                       <div key={img.id} className="image-thumb relative group aspect-square rounded-xl overflow-hidden border border-slate-100 shadow-sm">
                         <img src={img.url} alt="preview" className="w-full h-full object-cover" />
-                        <button 
+                        <button
                           onClick={() => removeImage(img.id)}
                           className="absolute top-1 right-1 p-1 bg-white text-red-600 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                         >
@@ -395,13 +481,19 @@ const handleSubmit = async (e) => {
 
         {/* Footer Actions */}
         <footer className="sticky bottom-0 bg-white border-t border-slate-100 p-6 flex justify-end gap-3 z-20">
-          <button 
-            onClick={onClose}
+          <button
+                 onClick={() => {
+              if (id) {
+                handileNAvigate();
+              } else {
+                setIsModalOpen(false);
+              }
+            }}
             className="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors uppercase tracking-tight"
           >
             Cancel
           </button>
-          <button 
+          <button
             form="product-form"
             type="submit"
             disabled={isSubmitting}
@@ -409,7 +501,7 @@ const handleSubmit = async (e) => {
           >
             {isSubmitting ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : 'Save Product'}
+            ) : id ? " Update Product" : 'Save Product'}
           </button>
         </footer>
       </div>
