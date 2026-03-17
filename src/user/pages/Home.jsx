@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
 import { useClerkToken } from '../../Service/useClerkToken';
+import { getAllProductsAPI } from '../../Service/allApi';
 const Home = () => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -10,6 +11,7 @@ const Home = () => {
   const offersRef = useRef(null);
   const categoriesRef = useRef(null);
   const [gsapLoaded, setGsapLoaded] = useState(false);
+  const [featuredFish,setFeaturedFish] = useState([])
  const navigate = useNavigate()
  const {handleToken} = useClerkToken()
  useEffect(()=>{
@@ -18,6 +20,7 @@ const Home = () => {
     console.log("token",token);
   }
   handiletoken()
+  handileGetAllProducts()
  },[])
   useEffect(() => {
   
@@ -31,7 +34,7 @@ const Home = () => {
         document.head.appendChild(script);
       });
     };
-
+ 
     const initGSAP = async () => {
       try {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js');
@@ -129,14 +132,35 @@ const Home = () => {
     return () => ctx.revert();
   }, [gsapLoaded]);
 
-  const featuredFish = [
-    { name: "Discus Blue Diamond", price: "$89", img: "🐟" },
-    { name: "Red Dragon Betta", price: "$45", img: "🐠" },
-    { name: "Neon Tetra Pack", price: "$12", img: "🐡" },
-    { name: "Electric Blue Ram", price: "$35", img: "🐚" },
-    { name: "Gold Dust Molly", price: "$15", img: "🦐" },
-    { name: "Koi Angel Fish", price: "$55", img: "🎐" },
-  ];
+  // handile featured Fish 
+   const handileGetAllProducts = async()=>{
+      console.log("inside get all products");
+      
+        const filter = {
+         
+
+        }
+        const query = new URLSearchParams(filter).toString()
+      const result = await getAllProductsAPI(query)
+      console.log(result.data.data);
+      const fillter = result.data.data
+      const Featuredfish = fillter.filter((i)=>i.isFeatured == true).slice(0,6)
+      console.log(Featuredfish);
+      setFeaturedFish(Featuredfish)
+      
+
+
+    }
+
+
+  // const featuredFish = [
+  //   { name: "Discus Blue Diamond", price: "$89", img: "🐟" },
+  //   { name: "Red Dragon Betta", price: "$45", img: "🐠" },
+  //   { name: "Neon Tetra Pack", price: "$12", img: "🐡" },
+  //   { name: "Electric Blue Ram", price: "$35", img: "🐚" },
+  //   { name: "Gold Dust Molly", price: "$15", img: "🦐" },
+  //   { name: "Koi Angel Fish", price: "$55", img: "🎐" },
+  // ];
         const {openSignIn,openSignUp,isSignedIn} =  useClerk()
 
   return (
@@ -192,12 +216,12 @@ const Home = () => {
               {featuredFish.map((fish, i) => (
                 <div  onClick={()=>{!isSignedIn ? openSignIn({
                      afterSignInUrl: `/view/${fish?.id}/aqua`
-                  }) : navigate(`/view/${item?.id}/aqua`)}}  key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
+                  }) : navigate(`/view/${fish?.id}/aqua`)}}  key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
                   <div className="absolute top-8 right-8 bg-red-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
                     Featured
                   </div>
                   <div className="text-8xl mb-8 flex justify-center group-hover:scale-110 transition-transform duration-500">
-                    {fish.img}
+                    <img className='w-[150px] h-[150px]' src={fish?.images?.[0]} alt={fish?.name} />
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold uppercase tracking-tight mb-2">{fish.name}</h3>
                   <p className="text-red-600 font-black text-xl">{fish.price}</p>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Search,
   AlertCircle,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
+import { getAllProductsAPI } from '../../Service/allApi';
 
 const Accessories = () => {
   const [filters, setFilters] = useState({
@@ -23,6 +24,16 @@ const Accessories = () => {
   const [isLoaded, setIsLoaded] = useState(false);
  const navigate = useNavigate()
   const {openSignIn,openSignUp,isSignedIn} =  useClerk()
+
+  const [category,setCategory] = useState("Accessories")
+  const [serarchKey,setSearchKey] = useState("")
+  const [Accessories,setAccessories] = useState([])
+  const handileInputCahnge = useCallback((e)=>{
+    setSearchKey(e.target.value)
+  },[])
+  useEffect(()=>{
+      handileGetAllProducts()
+  },[serarchKey])
   // Mock Accessories Data
   const ACCESSORIES = [
     { id: 201, name: "Ultra-Quiet External Filter", category: "Filters", price: 120, brand: "AquaFlow", img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" },
@@ -34,14 +45,30 @@ const Accessories = () => {
     { id: 207, name: "Nano Sponge Filter", category: "Filters", price: 18, brand: "AquaFlow", img: "https://images.unsplash.com/photo-1548449112-96a20133b14f?auto=format&fit=crop&q=80&w=400" },
     { id: 208, name: "Submersible Heater 100W", category: "Maintenance", price: 45, brand: "ThermoStat", img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" },
   ];
+  // get all products 
+    const handileGetAllProducts = async()=>{
+      console.log("inside get all products");
+      
+        const filter = {
+          category:category,
+          search:serarchKey
 
-  const filteredItems = useMemo(() => {
-    return ACCESSORIES.filter(item => {
-      const matchesSearch = item.name.toLowerCase().includes(filters.searchQuery.toLowerCase());
-      const matchesCat = filters.category === 'All' || item.category === filters.category;
-      return matchesSearch && matchesCat;
-    });
-  }, [filters]);
+        }
+        const query = new URLSearchParams(filter).toString()
+      const result = await getAllProductsAPI(query)
+      console.log(result.data.data);
+      setAccessories(result.data.data)
+
+
+    }
+
+  // const filteredItems = useMemo(() => {
+  //   return ACCESSORIES.filter(item => {
+  //     const matchesSearch = item.name.toLowerCase().includes(filters.searchQuery.toLowerCase());
+  //     const matchesCat = filters.category === 'All' || item.category === filters.category;
+  //     return matchesSearch && matchesCat;
+  //   });
+  // }, [filters]);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -64,7 +91,7 @@ const Accessories = () => {
         { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out", overwrite: true }
       );
     }
-  }, [filteredItems, isLoaded]);
+  }, [Accessories, isLoaded]);
 
   const updateFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
@@ -116,10 +143,11 @@ const Accessories = () => {
           <div className="relative flex-1 w-full">
             <Search size={18} className="absolute left-5 md:left-6 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input 
+            value={serarchKey}
               type="text"
               placeholder="Search equipment..."
-              value={filters.searchQuery}
-              onChange={(e) => updateFilter('searchQuery', e.target.value)}
+             
+              onChange={handileInputCahnge}
               className="w-full bg-neutral-50 border-2 border-transparent focus:border-black focus:bg-white pl-12 md:pl-16 pr-4 py-4 md:py-5 text-lg md:text-xl font-bold outline-none transition-all rounded"
             />
           </div>
@@ -138,19 +166,19 @@ const Accessories = () => {
         <div className="flex flex-col gap-6 md:gap-8">
           <div className="flex justify-between items-center pb-4 border-b border-neutral-100">
              <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-neutral-300">
-               {filters.category} Collection / <span className="text-black">{filteredItems.length} Products</span>
+               {filters.category} Collection / <span className="text-black">{Accessories.length} Products</span>
              </h2>
           </div>
 
-          {filteredItems.length > 0 ? (
+          {Accessories.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 md:gap-x-8 gap-y-10 md:gap-y-12">
-              {filteredItems.map((item) => (
+              {Accessories?.map((item) => (
                 <div  onClick={()=>{!isSignedIn ? openSignIn({
                      afterSignInUrl: `/view/${item?.id}/aqua`
                   }) : navigate(`/view/${item?.id}/aqua`)}} key={item.id} className="item-card group">
                   <div className="relative aspect-square overflow-hidden mb-4 md:mb-5 bg-neutral-50 rounded-sm">
                     <img 
-                      src={item.img} alt={item.name} 
+                      src={item?.images?.[0]} alt={item.name} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute top-3 right-3 md:top-4 md:right-4 bg-red-600 text-white text-[8px] font-black px-2 py-1 uppercase tracking-widest">

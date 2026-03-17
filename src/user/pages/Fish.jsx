@@ -23,24 +23,24 @@ import { getAllProductsAPI } from '../../Service/allApi';
     const {isSignedIn} =  useAuth()
   const {openSignIn,openSignUp} =  useClerk()
     // Mock Data
-    const DATA = {
-      Fish: [
-        { id: 1, name: "Neon Tetra", type: "Freshwater", difficulty: "Beginner", price: 5, img: "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=400" },
-        { id: 2, name: "Discus Fish", type: "Freshwater", difficulty: "Expert", price: 85, img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=400" },
-        { id: 3, name: "Yellow Tang", type: "Saltwater", difficulty: "Intermediate", price: 65, img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" },
-        { id: 4, name: "Clownfish", type: "Saltwater", difficulty: "Beginner", price: 25, img: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=400" },
-        { id: 5, name: "Arowana", type: "Exotic", difficulty: "Expert", price: 450, img: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=400" },
-        { id: 6, name: "Betta Splendens", type: "Freshwater", difficulty: "Beginner", price: 15, img: "https://images.unsplash.com/photo-1524704796725-9fc3044a58b2?auto=format&fit=crop&q=80&w=400" },
-        { id: 7, name: "Blue Powder Tang", type: "Saltwater", difficulty: "Intermediate", price: 120, img: "https://images.unsplash.com/photo-1548449112-96a20133b14f?auto=format&fit=crop&q=80&w=400" },
-        { id: 8, name: "Flowerhorn Cichlid", type: "Exotic", difficulty: "Intermediate", price: 150, img: "https://images.unsplash.com/photo-1615963244664-5b84446e84ba?auto=format&fit=crop&q=80&w=400" },
-      ],
-      Plants: [
-        { id: 101, name: "Anubias Nana", type: "Low Light", difficulty: "Beginner", price: 12, img: "https://images.unsplash.com/photo-1516550130560-ef49ad136601?auto=format&fit=crop&q=80&w=400" },
-        { id: 102, name: "Amazon Sword", type: "Medium Light", difficulty: "Beginner", price: 18, img: "https://images.unsplash.com/photo-1508595165502-3e2652e5570d?auto=format&fit=crop&q=80&w=400" },
-        { id: 103, name: "Java Moss", type: "Low Light", difficulty: "Beginner", price: 10, img: "https://images.unsplash.com/photo-1584564812239-50c609673891?auto=format&fit=crop&q=80&w=400" },
-        { id: 104, name: "Red Ludwigia", type: "High Light", difficulty: "Expert", price: 22, img: "https://images.unsplash.com/photo-1600100397608-f010e42ed97c?auto=format&fit=crop&q=80&w=400" },
-      ]
-    };
+    // const DATA = {
+    //   Fish: [
+    //     { id: 1, name: "Neon Tetra", type: "Freshwater", difficulty: "Beginner", price: 5, img: "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 2, name: "Discus Fish", type: "Freshwater", difficulty: "Expert", price: 85, img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 3, name: "Yellow Tang", type: "Saltwater", difficulty: "Intermediate", price: 65, img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 4, name: "Clownfish", type: "Saltwater", difficulty: "Beginner", price: 25, img: "https://images.unsplash.com/photo-1535591273668-578e31182c4f?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 5, name: "Arowana", type: "Exotic", difficulty: "Expert", price: 450, img: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 6, name: "Betta Splendens", type: "Freshwater", difficulty: "Beginner", price: 15, img: "https://images.unsplash.com/photo-1524704796725-9fc3044a58b2?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 7, name: "Blue Powder Tang", type: "Saltwater", difficulty: "Intermediate", price: 120, img: "https://images.unsplash.com/photo-1548449112-96a20133b14f?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 8, name: "Flowerhorn Cichlid", type: "Exotic", difficulty: "Intermediate", price: 150, img: "https://images.unsplash.com/photo-1615963244664-5b84446e84ba?auto=format&fit=crop&q=80&w=400" },
+    //   ],
+    //   Plants: [
+    //     { id: 101, name: "Anubias Nana", type: "Low Light", difficulty: "Beginner", price: 12, img: "https://images.unsplash.com/photo-1516550130560-ef49ad136601?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 102, name: "Amazon Sword", type: "Medium Light", difficulty: "Beginner", price: 18, img: "https://images.unsplash.com/photo-1508595165502-3e2652e5570d?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 103, name: "Java Moss", type: "Low Light", difficulty: "Beginner", price: 10, img: "https://images.unsplash.com/photo-1584564812239-50c609673891?auto=format&fit=crop&q=80&w=400" },
+    //     { id: 104, name: "Red Ludwigia", type: "High Light", difficulty: "Expert", price: 22, img: "https://images.unsplash.com/photo-1600100397608-f010e42ed97c?auto=format&fit=crop&q=80&w=400" },
+    //   ]
+    // };
 useEffect(()=>{
     handileGetAllProducts()
   },[category,searchKey])
@@ -194,7 +194,7 @@ useEffect(()=>{
                   }) : navigate(`/view/${item?._id}/aqua`)}}  key={item?._id} className="item-card group cursor-pointer">
                     <div className="relative aspect-square overflow-hidden mb-4 md:mb-5 bg-neutral-100 rounded-sm">
                       <img 
-                        src={item.img} alt={item.name} 
+                        src={item.images?.[0]} alt={item.name} 
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute top-3 right-3 md:top-4 md:right-4 bg-black text-white text-[8px] font-black px-2 py-1 uppercase">
