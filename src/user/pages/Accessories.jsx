@@ -174,8 +174,8 @@ const Accessories = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 md:gap-x-8 gap-y-10 md:gap-y-12">
               {Accessories?.map((item) => (
                 <div  onClick={()=>{!isSignedIn ? openSignIn({
-                     afterSignInUrl: `/view/${item?.id}/aqua`
-                  }) : navigate(`/view/${item?.id}/aqua`)}} key={item.id} className="item-card group">
+                     afterSignInUrl: `/view/${item?._id}/aqua`
+                  }) : navigate(`/view/${item?._id}/aqua`)}} key={item.id} className="item-card group">
                   <div className="relative aspect-square overflow-hidden mb-4 md:mb-5 bg-neutral-50 rounded-sm">
                     <img 
                       src={item?.images?.[0]} alt={item.name} 

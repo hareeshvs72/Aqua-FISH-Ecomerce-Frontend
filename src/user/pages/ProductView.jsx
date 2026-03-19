@@ -116,7 +116,7 @@ console.log(relatedProduct);
           <div className="space-y-4 md:space-y-6">
             <div className="img-reveal bg-neutral-50 rounded-sm overflow-hidden aspect-square flex items-center justify-center relative group border border-neutral-100">
               <img 
-                src={product?.images} 
+                src={product?.images?.[activeImg]} 
                 alt={product?.name} 
                 className="main-product-img w-full h-full object-cover grayscale-[0.1] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000"
               />
@@ -133,6 +133,7 @@ console.log(relatedProduct);
                   onClick={() => setActiveImg(i)}
                   className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 border rounded-sm overflow-hidden transition-all duration-300 ${activeImg === i ? 'border-red-600 ring-2 ring-red-50 ring-offset-2' : 'border-neutral-100 opacity-60 hover:opacity-100'}`}
                 >
+                  
                   <img src={img} className="w-full h-full object-cover" alt={`view ${i}`} />
                 </button>
               ))}
@@ -235,7 +236,7 @@ console.log(relatedProduct);
                   }) : navigate(`/view/${item?._id}/aqua`)}}  key={item._id} className="related-reveal group cursor-pointer">
                 <div className="aspect-[4/5] bg-neutral-50 rounded-sm overflow-hidden mb-4 relative">
                   <img 
-                    src={item?.image} 
+                    src={item?.images?.[0]} 
                     alt={item?.name} 
                     className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700"
                   />

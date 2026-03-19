@@ -215,8 +215,8 @@ const Home = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
               {featuredFish.map((fish, i) => (
                 <div  onClick={()=>{!isSignedIn ? openSignIn({
-                     afterSignInUrl: `/view/${fish?.id}/aqua`
-                  }) : navigate(`/view/${fish?.id}/aqua`)}}  key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
+                     afterSignInUrl: `/view/${fish?._id}/aqua`
+                  }) : navigate(`/view/${fish?._id}/aqua`)}}  key={i} className="fish-card group relative bg-gray-50 p-8 pt-20 border border-gray-100 transition-all duration-500 hover:border-red-600/30 hover:shadow-xl">
                   <div className="absolute top-8 right-8 bg-red-600 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-widest">
                     Featured
                   </div>
