@@ -7,22 +7,26 @@ import {
   Check,
   ChevronRight,
   Eye,
-  ArrowLeft
+  ArrowLeft,
+  Minus,
+  Plus
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getSingleProductAPI } from '../../Service/allApi';
+import { addToCartAPI, getSingleProductAPI } from '../../Service/allApi';
 import { useAuth, useClerk } from '@clerk/clerk-react';
 
 const ProductView = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeImg, setActiveImg] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const [relatedProduct,setRelatedProduct] = useState([])
   const [product ,setProduct] = useState({})
    const {id} = useParams()
   const navigate =  useNavigate()
    const {isSignedIn} =  useAuth()
   const {openSignIn,openSignUp} = useClerk()
+  const { getToken } = useAuth();
   // Main Product Data
   // const product = {
   //   name: "Golden Guppy Fish",
@@ -91,12 +95,38 @@ console.log(relatedProduct);
       );
     }
   }, [activeImg]);
+// handile add to cart
+  const handleAddToCart = async () => {
+    if (!isSignedIn) {
+      openSignIn({ afterSignInUrl: `/view/${id}/aqua` });
+      return;
+    }
 
-  const handleAddToCart = () => {
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const reqHeader = { Authorization: `Bearer ${token}` };
+
+      const body = {
+        product: {
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          image: product?.images?.[0] || product?.image?.[0],
+          quantity: quantity
+        }
+      };
+
+      const res = await addToCartAPI(body, reqHeader);
+      if (res.status === 200) {
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+      }
+    } catch (error) {
+      console.error("Cart Error:", error);
+    }
   };
-
   return (
     <div className={`min-h-screen bg-white text-neutral-900 font-sans antialiased transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
       
@@ -174,8 +204,25 @@ console.log(relatedProduct);
             </div>
 
             {/* SECTION 3: ACTIONS */}
-            <div className="space-y-3 md:space-y-4">
-              <div className="flex gap-3 md:gap-4">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Quantity Controls */}
+                <div className="flex items-center justify-between border border-neutral-200 rounded-sm px-4 py-2 sm:w-32 bg-white">
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="p-2 text-neutral-400 hover:text-black transition-colors"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="text-sm font-bold w-8 text-center">{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="p-2 text-neutral-400 hover:text-red-600 transition-colors"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+
                 <button 
                   onClick={handleAddToCart}
                   className={`flex-1 py-4 md:py-5 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 active:scale-95 shadow-lg ${

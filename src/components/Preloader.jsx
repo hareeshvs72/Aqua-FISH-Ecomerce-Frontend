@@ -50,8 +50,11 @@ const DeepSilhouettePreloader = () => {
           ease: "power1.inOut", 
           repeat: -1,
           onRepeat: function() {
-            // Reset opacity for a smooth entry on each loop
-            gsap.set(".fish-silhouette", { opacity: 0 });
+            // Check if context is still active before manipulating DOM
+            const fish = containerRef.current?.querySelector(".fish-silhouette");
+            if (fish) {
+              gsap.set(fish, { opacity: 0 });
+            }
           }
         }
       );

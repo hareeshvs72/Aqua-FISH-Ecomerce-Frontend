@@ -1,4 +1,4 @@
-  import React, { useState, useEffect, useMemo } from 'react';
+  import React, { useState, useEffect, useMemo, useRef } from 'react';
   import { 
     Waves, 
     Search,
@@ -52,6 +52,8 @@ useEffect(()=>{
     //   });
     // }, [filters]);
 
+    const mainRef = useRef(null);
+
     useEffect(() => {
       setIsLoaded(true);
       const script = document.createElement('script');
@@ -59,7 +61,16 @@ useEffect(()=>{
       script.async = true;
       script.onload = () => {
         const gsap = window.gsap;
-        gsap.from(".hero-anim", { y: 30, opacity: 0, duration: 0.8, stagger: 0.1, ease: "power3.out", delay: 0.2 });
+        if (gsap && mainRef.current) {
+          gsap.from(gsap.utils.toArray(".hero-anim", mainRef.current), { 
+            y: 30, 
+            opacity: 0, 
+            duration: 0.8, 
+            stagger: 0.1, 
+            ease: "power3.out", 
+            delay: 0.2 
+          });
+        }
       };
       document.head.appendChild(script);
       return () => {
@@ -70,13 +81,17 @@ useEffect(()=>{
     }, []);
 
     useEffect(() => {
-      if (isLoaded && window.gsap) {
-        window.gsap.fromTo(".item-card", 
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out", overwrite: true }
-        );
+      if (isLoaded && window.gsap && mainRef.current) {
+        const gsap = window.gsap;
+        const cards = gsap.utils.toArray(".item-card", mainRef.current);
+        if (cards.length > 0) {
+          gsap.fromTo(cards, 
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out", overwrite: true }
+          );
+        }
       }
-    }, [category, isLoaded]);
+    }, [category, isLoaded, products]);
 
     const updateFilter = (key, value) => {
       setFilters(prev => ({ ...prev, [key]: value }));
@@ -110,7 +125,7 @@ useEffect(()=>{
 
      
     return (
-      <div className={`min-h-screen bg-white text-black font-sans transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+      <div ref={mainRef} className={`min-h-screen bg-white text-black font-sans transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
         
         {/* HERO SECTION */}
         <header className="relative pt-20 pb-16 md:pt-32 md:pb-24 px-6 md:px-16 overflow-hidden">

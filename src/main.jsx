@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
 import ScrollToTop from './user/component/ScrollToTop.jsx'
 import { ClerkProvider } from '@clerk/clerk-react'
+import { RoleProvider } from './context/RoleContext.jsx'
 import { dark } from "@clerk/themes";
 
 // Import your Publishable Key
@@ -28,9 +29,10 @@ createRoot(document.getElementById('root')).render(
   publishableKey={PUBLISHABLE_KEY}>
 
     <BrowserRouter>
-      <ScrollToTop />
-      <App />
-
+      <RoleProvider>
+        <ScrollToTop />
+        <App />
+      </RoleProvider>
     </BrowserRouter>
 
   </ClerkProvider>

@@ -13,15 +13,9 @@ const Home = () => {
   const [gsapLoaded, setGsapLoaded] = useState(false);
   const [featuredFish,setFeaturedFish] = useState([])
  const navigate = useNavigate()
- const {handleToken} = useClerkToken()
- useEffect(()=>{
- const handiletoken=async()=>{
-   const token  = await  handleToken()
-    console.log("token",token);
-  }
-  handiletoken()
-  handileGetAllProducts()
- },[])
+  useEffect(()=>{
+   handileGetAllProducts()
+  },[])
   useEffect(() => {
   
     
@@ -55,77 +49,68 @@ const Home = () => {
     const ScrollTrigger = window.ScrollTrigger;
     gsap.registerPlugin(ScrollTrigger);
 
-    const ctx = gsap.context(() => {
+    const ctx = gsap.context((self) => {
       // --- SECTION 1: HERO PARALLAX ---
-      gsap.to(videoRef.current, {
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: true
-        },
-        y: "20%", 
-        ease: "none"
-      });
-
-      gsap.from(".hero-content > *", {
-        y: 60,
-        opacity: 0,
-        duration: 1.5,
-        stagger: 0.2,
-        ease: "power3.out"
-      });
-
-
-      // --- SECTION 2: FEATURED FISH PARALLAX ---
-      const fishCards = gsap.utils.toArray('.fish-card');
-      fishCards.forEach((card, i) => {
-        gsap.from(card, {
+      if (videoRef.current && heroRef.current) {
+        gsap.to(videoRef.current, {
           scrollTrigger: {
-            trigger: card,
-            start: "top bottom-=50",
-            toggleActions: "play none none reverse"
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true
           },
-          y: 80 + (i % 3) * 20,
-          opacity: 0,
-          duration: 1,
-          ease: "power2.out"
+          y: "20%", 
+          ease: "none"
         });
-      });
+      }
+
+      if (self.selector(".hero-content > *").length > 0) {
+        gsap.from(".hero-content > *", {
+          y: 60,
+          opacity: 0,
+          duration: 1.5,
+          stagger: 0.2,
+          ease: "power3.out"
+        });
+      }
 
       // --- SECTION 3: OFFERS ---
-      gsap.from(".offer-content", {
-        scrollTrigger: {
-          trigger: offersRef.current,
-          start: "top 70%",
-        },
-        x: -50,
-        opacity: 0,
-        duration: 1.2
-      });
+      if (offersRef.current) {
+        gsap.from(self.selector(".offer-content"), {
+          scrollTrigger: {
+            trigger: offersRef.current,
+            start: "top 70%",
+          },
+          x: -50,
+          opacity: 0,
+          duration: 1.2
+        });
 
-      gsap.to(".offer-line", {
-        scrollTrigger: {
-          trigger: offersRef.current,
-          start: "top 60%",
-        },
-        scaleX: 1,
-        duration: 1.5,
-        ease: "power4.inOut"
-      });
+        gsap.to(self.selector(".offer-line"), {
+          scrollTrigger: {
+            trigger: offersRef.current,
+            start: "top 60%",
+          },
+          scaleX: 1,
+          duration: 1.5,
+          ease: "power4.inOut"
+        });
+      }
 
       // --- SECTION 4: CATEGORIES ---
-      gsap.from(".category-item", {
-        scrollTrigger: {
-          trigger: categoriesRef.current,
-          start: "top 85%",
-        },
-        y: 40,
-        opacity: 0,
-        stagger: 0.1,
-        duration: 0.8,
-        ease: "sine.out"
-      });
+      if (categoriesRef.current) {
+        gsap.from(self.selector(".category-item"), {
+          scrollTrigger: {
+            trigger: categoriesRef.current,
+            start: "top 85%",
+          },
+          y: 40,
+          opacity: 0,
+          stagger: 0.1,
+          duration: 0.8,
+          ease: "sine.out"
+        });
+      }
 
     }, containerRef);
 

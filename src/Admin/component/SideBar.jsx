@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
+import { useClerk } from "@clerk/clerk-react";
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -156,6 +157,8 @@ const SideBar = () => {
         }
     }, [isMobileOpen]);
 
+    const { signOut } = useClerk();
+
     return (
         <div className="min-h-screen bg-zinc-50 flex font-sans text-zinc-900 overflow-hidden">
             {/* Mobile Menu Toggle Button (visible only on small screens) */}
@@ -219,7 +222,10 @@ const SideBar = () => {
 
                 {/* Bottom Section - Logout */}
                 <div className="pt-6 mt-6 border-t border-zinc-800">
-                    <button className="flex items-center gap-4 px-4 py-3 w-full text-zinc-500 hover:text-red-500 transition-all group">
+                    <button 
+                        onClick={() => signOut(() => navigate('/'))}
+                        className="flex items-center gap-4 px-4 py-3 w-full text-zinc-500 hover:text-red-500 transition-all group"
+                    >
                         <div className="group-hover:translate-x-1 transition-transform">
                             <LogOut size={20} />
                         </div>

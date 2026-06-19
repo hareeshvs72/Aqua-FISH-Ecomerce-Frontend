@@ -12,7 +12,7 @@ const commonAPI = async(httpRequest , url , reqBody , reqHeader)=>{
    return await axios(requestConfig).then(res=>{
        return res
     }).catch(err=>{
-        return err
+        throw err;
     })
 
 

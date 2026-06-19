@@ -11,7 +11,14 @@ export const syncUserAPI = (headers) =>
 export const updateUserAPI = (body, headers) =>
   commonAPI("PUT", `${SERVER_URL}/users/update`, body, headers);
 
+export const getCurrentUserAPI = (headers) =>
+  commonAPI("GET", `${SERVER_URL}/users/me`, {}, headers);
 
+export const getAllUsersAdminAPI = (headers) =>
+  commonAPI("GET", `${SERVER_URL}/users`, {}, headers);
+
+export const updateUserRoleAdminAPI = (body, headers) =>
+  commonAPI("PUT", `${SERVER_URL}/users/role`, body, headers);
 // ---------------- PRODUCTS ----------------
 
 export const getAllProductsAPI = (query) =>
@@ -43,3 +50,18 @@ export const getMyOrdersAPI = (headers) =>
 //  admin products 
 export const getAllProductsAdminAPI = (headers) =>
   commonAPI("GET", `${SERVER_URL}/products/admin/products`, {}, headers);
+
+
+// ---------------- CART ----------------
+
+export const addToCartAPI = (body, headers) =>
+  commonAPI("POST", `${SERVER_URL}/cart/add`, body, headers);
+
+export const getCartAPI = (headers) =>
+  commonAPI("GET", `${SERVER_URL}/cart`, {}, headers);
+
+export const removeFromCartAPI = (body, headers) =>
+  commonAPI("DELETE", `${SERVER_URL}/cart/remove`, body, headers);
+
+export const updateCartQuantityAPI = (body, headers) =>
+  commonAPI("PUT", `${SERVER_URL}/cart/update`, body, headers);

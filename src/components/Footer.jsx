@@ -33,35 +33,42 @@ const Footer = () => {
     if (!isReady || !window.gsap) return;
 
     const gsap = window.gsap;
+    
+    // Register ScrollTrigger globally if available via CDN
     if (window.ScrollTrigger) {
       gsap.registerPlugin(window.ScrollTrigger);
     }
 
     const ctx = gsap.context(() => {
       // 1. CTA Pulse Animation
-      gsap.to(ctaRef.current, {
-        scale: 1.05,
-        duration: 1.2,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
-      });
+      if (ctaRef.current) {
+        gsap.to(ctaRef.current, {
+          scale: 1.05,
+          duration: 1.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut"
+        });
+      }
 
       // 2. Entrance Stagger for Footer Sections
-      gsap.fromTo(".footer-section", 
-        { y: 50, opacity: 0 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          duration: 1, 
-          stagger: 0.15, 
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: footerRef.current,
-            start: "top bottom-=100px",
+      const sections = footerRef.current?.querySelectorAll(".footer-section");
+      if (sections && sections.length > 0) {
+        gsap.fromTo(sections, 
+          { y: 50, opacity: 0 },
+          { 
+            y: 0, 
+            opacity: 1, 
+            duration: 1, 
+            stagger: 0.15, 
+            ease: "power3.out",
+            scrollTrigger: window.ScrollTrigger ? {
+              trigger: footerRef.current,
+              start: "top bottom-=100px",
+            } : null
           }
-        }
-      );
+        );
+      }
     }, footerRef);
 
     return () => ctx.revert();

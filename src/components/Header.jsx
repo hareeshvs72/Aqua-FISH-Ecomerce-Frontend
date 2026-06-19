@@ -59,14 +59,18 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
 
     const gsap = window.gsap;
     const ctx = gsap.context(() => {
-      gsap.fromTo(".header-container",
+      // Use direct ref for the main container
+      gsap.fromTo(headerRef.current,
         { y: -100, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.2, ease: "expo.out" }
       );
+      
+      // Scoped selector for items within the header
       gsap.fromTo(".nav-item",
         { y: -10, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out", delay: 0.5 }
       );
+      
       gsap.fromTo(".logo-anim",
         { x: -20, opacity: 0 },
         { x: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.3 }
@@ -235,11 +239,11 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
                     <p className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">Welcome back</p>
                     <p className="text-xs font-bold truncate">{user?.firstName}</p>
                   </div>
-                  {userActions.map((action) => (
+                  {userActions.map((action, idx) => (
                     <a
-                      key={action.name}
+                      key={idx}
                       onClick={action.href}
-                      className="block px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors"
+                      className="block px-4 py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
                     >
                       {action.name}
                     </a>
@@ -303,6 +307,7 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
         </div>
         {navLinks.map((link, idx) => (
           <Link
+            key={idx}
             to={link.href}
             onClick={() => {
               setIsMenuOpen(false);

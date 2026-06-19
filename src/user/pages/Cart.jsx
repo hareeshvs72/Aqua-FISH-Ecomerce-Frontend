@@ -11,45 +11,43 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@clerk/clerk-react';
+import { getCartAPI, removeFromCartAPI, updateCartQuantityAPI } from '../../Service/allApi';
 
 const Cart = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [cartItems, setCartItems] = useState([
-    { 
-      id: 1, 
-      name: "Golden Guppy Fish", 
-      category: "Freshwater Fish", 
-      price: 299, 
-      qty: 2, 
-      img: "https://images.unsplash.com/photo-1524704659694-9f65b2a6020c?auto=format&fit=crop&q=80&w=400" 
-    },
-    { 
-      id: 2, 
-      name: "Blue Betta Fish", 
-      category: "Exotic Fish", 
-      price: 499, 
-      qty: 1, 
-      img: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&q=80&w=400" 
-    },
-    { 
-      id: 3, 
-      name: "Aquarium Water Filter", 
-      category: "Accessories", 
-      price: 1299, 
-      qty: 1, 
-      img: "https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80&w=400" 
-    }
-  ]);
-   
-  const navigate =useNavigate()
+  const [isLoadedUI, setIsLoadedUI] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const navigate = useNavigate();
 
-  const subtotal = useMemo(() => cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0), [cartItems]);
+  const fetchCart = async () => {
+    if (isLoaded && isSignedIn) {
+      try {
+        const token = await getToken();
+        if (token) {
+          const reqHeader = { Authorization: `Bearer ${token}` };
+          const res = await getCartAPI(reqHeader);
+          if (res.status === 200 && res.data.cart) {
+            setCartItems(res.data.cart.items || []);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching cart API:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, [isLoaded, isSignedIn]);
+
+  const subtotal = useMemo(() => cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0), [cartItems]);
   const shipping = subtotal > 2000 ? 0 : 150;
   const tax = 120;
   const total = subtotal + shipping + tax;
 
   useEffect(() => {
-    setIsLoaded(true);
+    setIsLoadedUI(true);
     const script = document.createElement('script');
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js";
     script.async = true;
@@ -62,37 +60,76 @@ const Cart = () => {
     return () => { if (document.head.contains(script)) document.head.removeChild(script); };
   }, []);
 
-  const updateQty = (id, delta) => {
+  const updateQty = async (productId, delta, currentQuantity) => {
+    const newQty = Math.max(1, currentQuantity + delta);
+    
+    // Optimistic UI update
     setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.qty + delta);
-        return { ...item, qty: newQty };
+      if (item.productId?._id === productId || item.productId === productId) {
+        return { ...item, quantity: newQty };
       }
       return item;
     }));
-  };
 
-  const removeItem = (id) => {
-    if (window.gsap) {
-      window.gsap.to(`#item-${id}`, {
-        opacity: 0,
-        y: 10,
-        duration: 0.3,
-        onComplete: () => {
-          setCartItems(prev => prev.filter(item => item.id !== id));
-        }
-      });
-    } else {
-      setCartItems(prev => prev.filter(item => item.id !== id));
+    try {
+      const token = await getToken();
+      if(token) {
+        const reqHeader = { Authorization: `Bearer ${token}` };
+        const body = { productId, quantity: newQty };
+        await updateCartQuantityAPI(body, reqHeader);
+      }
+    } catch(err) {
+      console.error(err);
+      fetchCart(); // Revert on failure
     }
   };
 
-  if (isLoaded && cartItems.length === 0) {
+  const removeItem = async (productId) => {
+    if (window.gsap) {
+      window.gsap.to(`#item-${productId}`, {
+        opacity: 0,
+        y: 10,
+        duration: 0.3,
+        onComplete: async () => {
+          setCartItems(prev => prev.filter(item => (item.productId?._id !== productId && item.productId !== productId)));
+        }
+      });
+    } else {
+      setCartItems(prev => prev.filter(item => (item.productId?._id !== productId && item.productId !== productId)));
+    }
+
+    try {
+      const token = await getToken();
+      if(token) {
+        const reqHeader = { Authorization: `Bearer ${token}` };
+        const body = { productId };
+        await removeFromCartAPI(body, reqHeader);
+      }
+    } catch(err) {
+      console.error(err);
+      fetchCart(); // Revert on failure
+    }
+  };
+
+  if (isLoadedUI && !isSignedIn) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
         <div className="w-px h-24 bg-neutral-200 mb-8"></div>
-        <h2 className="text-2xl font-light tracking-widest uppercase mb-4">Empty Cart</h2>
-        <button className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-600 border-b border-red-600 pb-1 hover:text-black hover:border-black transition-all">
+        <h2 className="text-2xl font-light tracking-widest uppercase mb-4">Account Required</h2>
+        <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-8">Please sign in to access your curated cart.</p>
+        <button onClick={() => navigate('/')} className="px-8 py-3 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-black transition-all">
+          Secure Login
+        </button>
+      </div>
+    );
+  }
+
+  if (isLoadedUI && cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-px h-24 bg-neutral-200 mb-8"></div>
+        <h2 className="text-2xl font-light tracking-widest uppercase mb-4">Empty Bag</h2>
+        <button onClick={() => navigate('/fish')} className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-600 border-b border-red-600 pb-1 hover:text-black hover:border-black transition-all">
           Discover Collections
         </button>
       </div>
@@ -100,7 +137,7 @@ const Cart = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-white text-neutral-900 font-sans antialiased transition-opacity duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`min-h-screen bg-white text-neutral-900 font-sans antialiased transition-opacity duration-1000 ${isLoadedUI ? 'opacity-100' : 'opacity-0'}`}>
       
       {/* HEADER */}
       <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-neutral-50 px-4 md:px-6 py-4 md:py-6 flex justify-between items-center">
@@ -125,12 +162,14 @@ const Cart = () => {
           
           {/* PRODUCT LIST */}
           <div className="lg:col-span-7 space-y-8 md:space-y-12">
-            {cartItems.map((item) => (
-              <div key={item.id} id={`item-${item.id}`} className="fade-in flex flex-col sm:flex-row gap-6 md:gap-8 pb-8 md:pb-12 border-b border-neutral-50 group relative">
+            {cartItems.map((item) => {
+              const prodId = item.productId?._id || item.productId;
+              return (
+              <div key={prodId} id={`item-${prodId}`} className="fade-in flex flex-col sm:flex-row gap-6 md:gap-8 pb-8 md:pb-12 border-b border-neutral-50 group relative">
                 
                 {/* Image Container */}
                 <div className="w-full sm:w-32 md:w-44 h-48 md:h-56 bg-neutral-50 overflow-hidden relative grayscale-[0.3] sm:grayscale-[0.5] group-hover:grayscale-0 transition-all duration-700 rounded-sm">
-                  <img src={item.img} alt={item.name} className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-1000" />
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-1000" />
                 </div>
 
                 {/* Details Container */}
@@ -138,37 +177,37 @@ const Cart = () => {
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-red-600 block mb-1">{item.category}</span>
+                        {/* <span className="text-[9px] font-bold uppercase tracking-widest text-red-600 block mb-1">{item.category}</span> */}
                         <h3 className="text-lg md:text-xl font-medium tracking-tight text-neutral-800">{item.name}</h3>
                       </div>
                       <button 
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(prodId)}
                         className="p-2 text-neutral-300 hover:text-red-600 transition-colors"
                         aria-label="Remove item"
                       >
                         <X size={18} strokeWidth={1.5} />
                       </button>
                     </div>
-                    <p className="text-[10px] text-neutral-400 uppercase tracking-widest">Serial Code: AS-{item.id}09-26</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-widest">Serial Code: AS-{prodId?.toString().slice(-4)}-26</p>
                   </div>
 
                   <div className="mt-6 md:mt-0 flex items-center sm:items-end justify-between">
                     {/* Quantity Selector */}
                     <div className="flex items-center border border-neutral-100 rounded-full px-2 py-1 bg-white">
-                      <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-black transition-colors"><Minus size={12} /></button>
-                      <span className="w-8 text-center text-xs font-bold">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-red-600 transition-colors"><Plus size={12} /></button>
+                      <button onClick={() => updateQty(prodId, -1, item.quantity)} className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-black transition-colors"><Minus size={12} /></button>
+                      <span className="w-8 text-center text-xs font-bold">{item.quantity}</span>
+                      <button onClick={() => updateQty(prodId, 1, item.quantity)} className="w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-red-600 transition-colors"><Plus size={12} /></button>
                     </div>
                     
                     {/* Price */}
                     <div className="text-right">
                       <p className="text-[9px] md:text-xs text-neutral-400 mb-0 md:mb-1 uppercase tracking-widest">Subtotal</p>
-                      <p className="text-lg md:text-xl font-light tracking-tighter">₹{(item.price * item.qty).toLocaleString()}</p>
+                      <p className="text-lg md:text-xl font-light tracking-tighter">₹{(item.price * item.quantity).toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           {/* SUMMARY SIDEBAR */}
