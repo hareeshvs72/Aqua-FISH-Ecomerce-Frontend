@@ -12,13 +12,65 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
-import { getCartAPI, removeFromCartAPI, updateCartQuantityAPI } from '../../Service/allApi';
+import { getCartAPI, removeFromCartAPI, updateCartQuantityAPI, createOrderAPI } from '../../Service/allApi';
 
 const Cart = () => {
   const [isLoadedUI, setIsLoadedUI] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
+
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isOrderSuccess, setIsOrderSuccess] = useState(false);
+  const [placedOrderDetails, setPlacedOrderDetails] = useState(null);
+  const [shippingAddress, setShippingAddress] = useState({
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India'
+  });
+  const [phone, setPhone] = useState('');
+  const [addressError, setAddressError] = useState('');
+
+  const handleCheckoutSubmit = async (e) => {
+    e.preventDefault();
+    if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.state || !shippingAddress.pincode || !phone) {
+      setAddressError("Please fill in all address and contact fields.");
+      return;
+    }
+    
+    setIsPlacingOrder(true);
+    setAddressError('');
+    try {
+      const token = await getToken();
+      if (token) {
+        const reqHeader = { Authorization: `Bearer ${token}` };
+        const body = {
+          items: cartItems.map(item => ({
+            product: item.productId?._id || item.productId,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          shippingAddress
+        };
+        const res = await createOrderAPI(body, reqHeader);
+        if (res.status === 201 && res.data.success) {
+          setIsOrderSuccess(true);
+          setPlacedOrderDetails(res.data.data);
+          setCartItems([]); // Clear local cart items
+        } else {
+          setAddressError(res.data.message || "Failed to place order. Please try again.");
+        }
+      }
+    } catch (error) {
+      console.error("Checkout Error:", error);
+      setAddressError(error.response?.data?.message || "An error occurred. Please try again.");
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  };
 
   const fetchCart = async () => {
     if (isLoaded && isSignedIn) {
@@ -110,6 +162,39 @@ const Cart = () => {
       fetchCart(); // Revert on failure
     }
   };
+
+  if (isOrderSuccess) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
+        <style>{`
+          @keyframes lineReveal {
+            from { height: 0; }
+            to { height: 96px; }
+          }
+          .animate-line {
+            animation: lineReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+        `}</style>
+        <div className="w-px bg-red-600 mb-8 animate-line"></div>
+        <h2 className="text-3xl font-light tracking-widest uppercase mb-4 text-neutral-900">Order Secured</h2>
+        <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">Thank you for your acquisition.</p>
+        {placedOrderDetails && (
+          <p className="text-[10px] uppercase tracking-widest text-red-600 font-mono mb-8">
+            Reference ID: {placedOrderDetails._id}
+          </p>
+        )}
+        <div className="max-w-md w-full bg-neutral-50 p-6 rounded-sm border border-neutral-100 text-left mb-8">
+          <h4 className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-4 border-b border-neutral-200 pb-2">Delivery Manifest</h4>
+          <p className="text-xs font-light text-neutral-600 mb-2"><strong className="font-medium text-neutral-800">Destination:</strong> {shippingAddress.address}, {shippingAddress.city}, {shippingAddress.state} - {shippingAddress.pincode}</p>
+          <p className="text-xs font-light text-neutral-600 mb-2"><strong className="font-medium text-neutral-800">Transit:</strong> Climate Controlled Courier</p>
+          <p className="text-xs font-light text-neutral-600"><strong className="font-medium text-neutral-800">Est. Arrival:</strong> 3-5 Business Days</p>
+        </div>
+        <button onClick={() => navigate('/fish')} className="px-8 py-3 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-red-600 transition-all shadow-md">
+          Explore Collections
+        </button>
+      </div>
+    );
+  }
 
   if (isLoadedUI && !isSignedIn) {
     return (
@@ -238,7 +323,10 @@ const Cart = () => {
               </div>
 
               <div className="space-y-4">
-                <button className="w-full py-4 md:py-5 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-red-600 transition-all flex items-center justify-center gap-3 group active:scale-[0.98]">
+                <button 
+                  onClick={() => setIsCheckoutOpen(true)}
+                  className="w-full py-4 md:py-5 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-red-600 transition-all flex items-center justify-center gap-3 group active:scale-[0.98]"
+                >
                   Confirm & Checkout
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -261,6 +349,135 @@ const Cart = () => {
           </aside>
         </div>
       </main>
+
+      {/* CHECKOUT SIDEBAR OVERLAY */}
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/45 backdrop-blur-xs transition-opacity duration-300">
+          <style>{`
+            @keyframes slideIn {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+            .animate-slide-in {
+              animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+          `}</style>
+          {/* Backdrop Closer */}
+          <div className="absolute inset-0" onClick={() => setIsCheckoutOpen(false)}></div>
+          
+          {/* Sidebar Panel */}
+          <div className="relative w-full max-w-md bg-white h-screen shadow-2xl p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-l border-neutral-100 animate-slide-in">
+            <div>
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-neutral-800">Checkout Info</h3>
+                <button 
+                  onClick={() => setIsCheckoutOpen(false)}
+                  className="p-2 text-neutral-400 hover:text-black transition-colors"
+                >
+                  <X size={20} strokeWidth={1.5} />
+                </button>
+              </div>
+
+              {addressError && (
+                <div className="mb-6 p-4 bg-red-50 border-l border-red-500 text-red-600 text-xs font-light">
+                  {addressError}
+                </div>
+              )}
+
+              <form onSubmit={handleCheckoutSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Shipping Address</label>
+                  <textarea
+                    required
+                    value={shippingAddress.address}
+                    onChange={(e) => setShippingAddress({...shippingAddress, address: e.target.value})}
+                    placeholder="Street Address, Apartment, Suite"
+                    className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">City</label>
+                    <input
+                      type="text"
+                      required
+                      value={shippingAddress.city}
+                      onChange={(e) => setShippingAddress({...shippingAddress, city: e.target.value})}
+                      placeholder="City"
+                      className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">State</label>
+                    <input
+                      type="text"
+                      required
+                      value={shippingAddress.state}
+                      onChange={(e) => setShippingAddress({...shippingAddress, state: e.target.value})}
+                      placeholder="State"
+                      className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Pincode</label>
+                    <input
+                      type="text"
+                      required
+                      value={shippingAddress.pincode}
+                      onChange={(e) => setShippingAddress({...shippingAddress, pincode: e.target.value})}
+                      placeholder="Pincode"
+                      className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Country</label>
+                    <input
+                      type="text"
+                      required
+                      value={shippingAddress.country}
+                      onChange={(e) => setShippingAddress({...shippingAddress, country: e.target.value})}
+                      placeholder="Country"
+                      className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Phone Number</label>
+                  <input
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Phone Number"
+                    className="w-full p-3 border border-neutral-200 focus:border-red-600 focus:outline-none text-xs font-light rounded-sm bg-neutral-50"
+                  />
+                </div>
+              </form>
+            </div>
+
+            <div className="mt-8 border-t border-neutral-100 pt-6">
+              <div className="flex justify-between items-baseline mb-6">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">Order Total</span>
+                <span className="text-2xl font-light tracking-tighter text-red-600">₹{total.toLocaleString()}</span>
+              </div>
+              <button 
+                onClick={handleCheckoutSubmit}
+                disabled={isPlacingOrder}
+                className="w-full py-4 bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-red-600 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50"
+              >
+                {isPlacingOrder ? "Processing Order..." : "Place Order"}
+                {!isPlacingOrder && <ArrowRight size={14} />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

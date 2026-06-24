@@ -105,7 +105,8 @@ console.log(relatedProduct);
     try {
       const token = await getToken();
       if (!token) return;
-
+        //  console.log(token);
+         
       const reqHeader = { Authorization: `Bearer ${token}` };
 
       const body = {
@@ -125,6 +126,38 @@ console.log(relatedProduct);
       }
     } catch (error) {
       console.error("Cart Error:", error);
+    }
+  };
+
+  // handile direct buy
+  const handleDirectBuy = async () => {
+    if (!isSignedIn) {
+      openSignIn({ afterSignInUrl: `/view/${id}/aqua` });
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const reqHeader = { Authorization: `Bearer ${token}` };
+
+      const body = {
+        product: {
+          productId: product._id,
+          name: product.name,
+          price: product.price,
+          image: product?.images?.[0] || product?.image?.[0],
+          quantity: quantity
+        }
+      };
+
+      const res = await addToCartAPI(body, reqHeader);
+      if (res.status === 200) {
+        navigate('/cart');
+      }
+    } catch (error) {
+      console.error("Direct Buy Error:", error);
     }
   };
   return (
@@ -239,7 +272,10 @@ console.log(relatedProduct);
                    <Activity size={18} strokeWidth={1.5} className="text-neutral-400 hover:text-black" />
                 </button>
               </div>
-              <button className="w-full py-4 md:py-5 border border-neutral-900 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 group">
+              <button 
+                onClick={handleDirectBuy}
+                className="w-full py-4 md:py-5 border border-neutral-900 text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 group"
+              >
                 Direct Buy <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
