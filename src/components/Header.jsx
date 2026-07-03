@@ -46,7 +46,6 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
   const userActions = [
     { name: 'My Profile', href: () => openUserProfile() },
     { name: 'Orders', href: () => navigate('/orders')  },
-    { name: 'Settings', href:  () => navigate('/settings')  },
   ];
 
   useEffect(() => {

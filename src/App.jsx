@@ -9,6 +9,7 @@ import Fish from './user/pages/Fish';
 import Accessories from './user/pages/Accessories';
 import Cart from './user/pages/Cart';
 import ProductView from './user/pages/ProductView';
+import UserOrder from './user/pages/UserOrder';
 
 import AdminLayout from './Admin/Layout/AdminLayout';
 import Dashboard from './Admin/Pages/Dashboard';
@@ -41,6 +42,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/fish" element={<Fish />} />
             <Route path="/accessories" element={<Accessories />} />
+            <Route path="/orders" element={<UserOrder />} />
           </Route>
 
           <Route path="/cart" element={<UserRoute><Cart /></UserRoute>} />

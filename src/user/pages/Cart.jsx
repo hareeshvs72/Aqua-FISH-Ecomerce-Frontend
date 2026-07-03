@@ -35,34 +35,48 @@ const Cart = () => {
   const [addressError, setAddressError] = useState('');
 
   const handleCheckoutSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+
     if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.state || !shippingAddress.pincode || !phone) {
       setAddressError("Please fill in all address and contact fields.");
       return;
     }
-    
+
     setIsPlacingOrder(true);
     setAddressError('');
     try {
       const token = await getToken();
-      if (token) {
-        const reqHeader = { Authorization: `Bearer ${token}` };
-        const body = {
-          items: cartItems.map(item => ({
-            product: item.productId?._id || item.productId,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          shippingAddress
-        };
-        const res = await createOrderAPI(body, reqHeader);
-        if (res.status === 201 && res.data.success) {
+      if (!token) {
+        setAddressError("Authentication failed. Please sign in again.");
+        return;
+      }
+
+      const reqHeader = { Authorization: `Bearer ${token}` };
+      const body = {
+        items: cartItems.map(item => ({
+          product: item.productId?._id || item.productId,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        shippingAddress
+      };
+
+      console.log("Placing order with body:", body);
+
+      const res = await createOrderAPI(body, reqHeader);
+      console.log("Order API response:", res);
+
+      if (res.status === 201 && res.data.success) {
+        if (res.data.url) {
+          window.location.href = res.data.url;
+        } else {
           setIsOrderSuccess(true);
           setPlacedOrderDetails(res.data.data);
-          setCartItems([]); // Clear local cart items
-        } else {
-          setAddressError(res.data.message || "Failed to place order. Please try again.");
+          setCartItems([]);
+          setIsCheckoutOpen(false);
         }
+      } else {
+        setAddressError(res.data?.message || "Failed to place order. Please try again.");
       }
     } catch (error) {
       console.error("Checkout Error:", error);
