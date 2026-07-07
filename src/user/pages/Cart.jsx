@@ -25,14 +25,14 @@ const Cart = () => {
   const [isOrderSuccess, setIsOrderSuccess] = useState(false);
   const [placedOrderDetails, setPlacedOrderDetails] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
-    address: '',
-    city: '',
-    state: '',
-    pincode: '',
+    address: 'demo',
+    city: 'demo',
+    state: 'demo',
+    pincode: 'demo',
     country: 'India'
   });
-  const [phone, setPhone] = useState('');
-  const [addressError, setAddressError] = useState('');
+  const [phone, setPhone] = useState('demo');
+  const [addressError, setAddressError] = useState('demo');
 
   const handleCheckoutSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();

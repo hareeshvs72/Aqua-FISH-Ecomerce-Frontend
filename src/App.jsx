@@ -21,6 +21,8 @@ import Analytics from './Admin/Pages/Analytics';
 import AddProduct from './Admin/component/AddProduct';
 import AuthSync from './user/component/AuthSync';
 import UserRoute from './user/component/UserRoute';
+import PaymentSuccess from './components/PaymentSuccess';
+import PaymentCancell from './components/PaymentCancell';
 
 // ✅ Lazy-loaded pages
 const Home = lazy(() => import('./user/pages/Home'));
@@ -44,6 +46,8 @@ function App() {
             <Route path="/accessories" element={<Accessories />} />
             <Route path="/orders" element={<UserOrder />} />
           </Route>
+         <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/payment-cancell" element={<PaymentCancell />} />
 
           <Route path="/cart" element={<UserRoute><Cart /></UserRoute>} />
           <Route path="/view/:id/aqua" element={<UserRoute><ProductView /></UserRoute>} />

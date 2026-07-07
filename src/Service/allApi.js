@@ -74,3 +74,16 @@ export const removeFromCartAPI = (body, headers) =>
 
 export const updateCartQuantityAPI = (body, headers) =>
   commonAPI("PUT", `${SERVER_URL}/cart/update`, body, headers);
+
+
+
+// payment verify 
+
+export const verifyPaymentAPI = (sessionId, reqHeader) => {
+  return commonAPI(
+    "GET",
+    `/orders/verify/${sessionId}`,
+    "",
+    reqHeader
+  );
+};
