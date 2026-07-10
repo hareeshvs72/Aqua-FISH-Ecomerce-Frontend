@@ -52,6 +52,8 @@ const Orders = () => {
       const res = await getAllOrdersAdminAPI(reqHeader);
       if (res.status === 200 && res.data.success) {
         setOrders(res.data.data);
+        console.log(res.data.data);
+        
       } else {
         setError(res.data.message || 'Failed to fetch orders.');
       }
@@ -129,9 +131,14 @@ const Orders = () => {
       o.orderStatus?.toLowerCase().includes(q)
     );
   });
+  console.log(filteredOrders[0]);
+console.log(filteredOrders[0]?.items);
+console.log(filteredOrders[0]?.items[0]);
+console.log(filteredOrders[0]?.items[0]?.product);
+console.log(filteredOrders);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900 ">
       <div className="max-w-7xl mx-auto">
         
         {/* Header Section */}
@@ -215,22 +222,22 @@ const Orders = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredOrders.map((order, index) => {
-                      const productSummary = order.items
+                    filteredOrders?.map((order, index) => {
+                      const productSummary = order?.items
                         ?.map(i => `${i.product?.name || 'Product'} (x${i.quantity})`)
                         .join(', ') || '—';
                       const shortId = `#AQ-${order._id?.slice(-5).toUpperCase()}`;
                       const shortCustomer = order.clerkId?.slice(0, 14) + '...';
 
                       return (
-                        <tr key={order._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group opacity-1">
+                        <tr key={order?._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group opacity-1">
                           <td className="px-6 py-5 font-bold text-blue-600 font-mono text-sm">{shortId}</td>
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                                {order.clerkId?.charAt(5)?.toUpperCase() || 'U'}
+                                {order?.clerkId?.charAt(5)?.toUpperCase() || 'U'}
                               </div>
-                              <span className="font-medium text-slate-700 text-xs truncate max-w-[120px]" title={order.clerkId}>
+                              <span className="font-medium text-slate-700 text-xs truncate max-w-[120px]" title={order?.clerkId}>
                                 {shortCustomer}
                               </span>
                             </div>
@@ -238,7 +245,10 @@ const Orders = () => {
                           <td className="px-6 py-5">
                             <div className="flex items-center text-slate-500 text-sm max-w-[220px]">
                               <Package size={14} className="mr-2 shrink-0" />
-                              <span className="truncate" title={productSummary}>{productSummary}</span>
+                              {/* <span className="truncate" title={productSummary}>{productSummary}</span> */}
+                              <span className="text-red-600 font-bold">
+  {productSummary}
+</span>
                             </div>
                           </td>
                           <td className="px-6 py-5 font-bold text-slate-900">
@@ -275,6 +285,7 @@ const Orders = () => {
                       );
                     })
                   )}
+                  
                 </tbody>
               </table>
             </div>
