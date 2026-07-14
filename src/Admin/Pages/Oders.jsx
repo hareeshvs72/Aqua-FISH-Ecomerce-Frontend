@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Package, 
-  Search, 
-  MoreHorizontal, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Package,
+  Search,
+  MoreHorizontal,
+  CheckCircle2,
+  Clock,
   RefreshCcw,
   Loader2,
   AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@clerk/clerk-react';
 import { getAllOrdersAdminAPI, updateOrderStatusAPI } from '../../Service/allApi';
-
+import { gsap } from "gsap";
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,24 +22,7 @@ const Orders = () => {
   const { getToken } = useAuth();
 
   // Load GSAP via CDN
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js";
-    script.async = true;
-    script.onload = () => {
-      window.gsap.from(".order-row", {
-        y: 30,
-        opacity: 0,
-        stagger: 0.07,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-    };
-    document.body.appendChild(script);
-    return () => {
-      if (document.body.contains(script)) document.body.removeChild(script);
-    };
-  }, []);
+
 
   // Fetch all orders from backend
   const fetchAllOrders = async () => {
@@ -51,9 +34,11 @@ const Orders = () => {
       const reqHeader = { Authorization: `Bearer ${token}` };
       const res = await getAllOrdersAdminAPI(reqHeader);
       if (res.status === 200 && res.data.success) {
+        console.log("Full Response:", res);
+        console.log("Response Data:", res.data);
+        console.log("Orders:", res.data.data);
+
         setOrders(res.data.data);
-        console.log(res.data.data);
-        
       } else {
         setError(res.data.message || 'Failed to fetch orders.');
       }
@@ -69,31 +54,35 @@ const Orders = () => {
   }, []);
 
   const getStatusStyles = (status) => {
-    switch(status) {
-      case 'Pending':    return 'bg-amber-100 text-amber-700 border-amber-200';
+    switch (status) {
+      case 'Pending': return 'bg-amber-100 text-amber-700 border-amber-200';
       case 'Processing': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'Shipped':    return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'Delivered':  return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      case 'Cancelled':  return 'bg-red-100 text-red-700 border-red-200';
-      default:           return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'Shipped': return 'bg-purple-100 text-purple-700 border-purple-200';
+      case 'Delivered': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'Cancelled': return 'bg-red-100 text-red-700 border-red-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusIcon = (status) => {
-    switch(status) {
-      case 'Pending':    return <Clock size={14} className="mr-1" />;
+    switch (status) {
+      case 'Pending': return <Clock size={14} className="mr-1" />;
       case 'Processing': return <RefreshCcw size={14} className="mr-1" />;
-      case 'Shipped':    return <Package size={14} className="mr-1" />;
-      case 'Delivered':  return <CheckCircle2 size={14} className="mr-1" />;
-      default:           return null;
+      case 'Shipped': return <Package size={14} className="mr-1" />;
+      case 'Delivered': return <CheckCircle2 size={14} className="mr-1" />;
+      default: return null;
     }
   };
 
   const updateStatus = async (orderId, newStatus, index) => {
     const badgeId = `#badge-${index}`;
-    if (window.gsap) {
-      window.gsap.to(badgeId, { scale: 1.15, duration: 0.1, yoyo: true, repeat: 1 });
-    }
+
+    gsap.to(badgeId, {
+      scale: 1.15,
+      duration: 0.1,
+      yoyo: true,
+      repeat: 1
+    });
 
     // Optimistic UI update
     setOrders(prev => prev.map(o => o._id === orderId ? { ...o, orderStatus: newStatus } : o));
@@ -121,26 +110,44 @@ const Orders = () => {
   };
 
   // Filter by search query
-  const filteredOrders = orders.filter(o => {
-    const q = searchQuery.toLowerCase();
-    const productNames = o.items?.map(i => i.product?.name || '').join(' ').toLowerCase();
-    return (
-      o._id?.toLowerCase().includes(q) ||
-      o.clerkId?.toLowerCase().includes(q) ||
-      productNames.includes(q) ||
-      o.orderStatus?.toLowerCase().includes(q)
-    );
+  const filteredOrders = (orders || []).filter(o => {
+    if (!o) return false;
+    const q = (searchQuery || '').toLowerCase();
+    const productNames = (o.items || []).map(i => i.product?.name || '').join(' ').toLowerCase();
+
+    const idMatches = o._id ? o._id.toLowerCase().includes(q) : false;
+    const clerkMatches = o.clerkId ? o.clerkId.toLowerCase().includes(q) : false;
+    const statusMatches = o.orderStatus ? o.orderStatus.toLowerCase().includes(q) : false;
+    const productMatches = productNames.includes(q);
+
+    return idMatches || clerkMatches || productMatches || statusMatches;
   });
-  console.log(filteredOrders[0]);
-console.log(filteredOrders[0]?.items);
-console.log(filteredOrders[0]?.items[0]);
-console.log(filteredOrders[0]?.items[0]?.product);
-console.log(filteredOrders);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!tableRef.current) return;
+    if (filteredOrders.length === 0) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(".order-row", {
+        opacity: 0,
+        y: 25,
+        duration: 0.5,
+        stagger: 0.08,
+        ease: "power2.out",
+        clearProps: "all",
+      });
+    }, tableRef);
+
+    return () => ctx.revert();
+  }, [loading, filteredOrders]);
+
+
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900 ">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
@@ -150,15 +157,15 @@ console.log(filteredOrders);
           <div className="flex items-center gap-3">
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search orders..." 
+              <input
+                type="text"
+                placeholder="Search orders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 transition-all"
               />
             </div>
-            <button 
+            <button
               onClick={fetchAllOrders}
               className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg font-medium transition active:scale-95 shadow-sm"
             >
@@ -171,10 +178,10 @@ console.log(filteredOrders);
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Orders',  val: orders.length,                                            color: 'text-blue-600' },
-            { label: 'Pending',       val: orders.filter(o => o.orderStatus === 'Pending').length,   color: 'text-amber-600' },
-            { label: 'Processing',    val: orders.filter(o => o.orderStatus === 'Processing').length, color: 'text-blue-500' },
-            { label: 'Delivered',     val: orders.filter(o => o.orderStatus === 'Delivered').length, color: 'text-emerald-600' },
+            { label: 'Total Orders', val: orders.length, color: 'text-blue-600' },
+            { label: 'Pending', val: orders.filter(o => o.orderStatus === 'Pending').length, color: 'text-amber-600' },
+            { label: 'Processing', val: orders.filter(o => o.orderStatus === 'Processing').length, color: 'text-blue-500' },
+            { label: 'Delivered', val: orders.filter(o => o.orderStatus === 'Delivered').length, color: 'text-emerald-600' },
           ].map((stat, i) => (
             <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">{stat.label}</p>
@@ -223,20 +230,28 @@ console.log(filteredOrders);
                     </tr>
                   ) : (
                     filteredOrders?.map((order, index) => {
-                      const productSummary = order?.items
-                        ?.map(i => `${i.product?.name || 'Product'} (x${i.quantity})`)
-                        .join(', ') || '—';
+                      const productSummary =
+                        order?.items
+                          ?.filter(Boolean)
+                          .map((item) => {
+                            return `${item?.product?.name || "Product"} (x${item?.quantity || 0})`;
+                          })
+                          .join(", ") || "—";
                       const shortId = `#AQ-${order._id?.slice(-5).toUpperCase()}`;
-                      const shortCustomer = order.clerkId?.slice(0, 14) + '...';
-
+                      const shortCustomer =
+                        order?.clerkId
+                          ? order.clerkId.length > 14
+                            ? order.clerkId.slice(0, 14) + "..."
+                            : order.clerkId
+                          : "Unknown";
                       return (
-                        <tr key={order?._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group opacity-1">
-                          <td className="px-6 py-5 font-bold text-blue-600 font-mono text-sm">{shortId}</td>
+                        
+                         <tr key={order?._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group ">
+                          <td className="px-6 py-5 font-bold text-blue-600 font-mono text-sm"><div>{shortId}</div></td>
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                                {order?.clerkId?.charAt(5)?.toUpperCase() || 'U'}
-                              </div>
+                                {order?.clerkId?.[5]?.toUpperCase() || "U"}                              </div>
                               <span className="font-medium text-slate-700 text-xs truncate max-w-[120px]" title={order?.clerkId}>
                                 {shortCustomer}
                               </span>
@@ -244,18 +259,14 @@ console.log(filteredOrders);
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex items-center text-slate-500 text-sm max-w-[220px]">
-                              <Package size={14} className="mr-2 shrink-0" />
-                              {/* <span className="truncate" title={productSummary}>{productSummary}</span> */}
-                              <span className="text-red-600 font-bold">
-  {productSummary}
-</span>
+                             <td>TEXT</td>
                             </div>
                           </td>
                           <td className="px-6 py-5 font-bold text-slate-900">
                             ₹{order.totalAmount?.toLocaleString() || '0'}
                           </td>
                           <td className="px-6 py-5">
-                            <span 
+                            <span
                               id={`badge-${index}`}
                               className={`status-badge inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border transition-all duration-300 ${getStatusStyles(order.orderStatus)}`}
                             >
@@ -265,7 +276,7 @@ console.log(filteredOrders);
                           </td>
                           <td className="px-6 py-5 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <select 
+                              <select
                                 value={order.orderStatus}
                                 onChange={(e) => updateStatus(order._id, e.target.value, index)}
                                 className="text-xs bg-slate-50 border border-slate-200 rounded p-1 text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
@@ -285,7 +296,7 @@ console.log(filteredOrders);
                       );
                     })
                   )}
-                  
+
                 </tbody>
               </table>
             </div>
@@ -301,7 +312,7 @@ console.log(filteredOrders);
       </div>
 
       {/* Animated Toast Notification */}
-      <div 
+      <div
         className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full text-white text-sm font-medium shadow-2xl flex items-center gap-3 transition-all duration-500 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'} ${toast.isError ? 'bg-red-600' : 'bg-slate-900'}`}
       >
         <div className={`w-2 h-2 rounded-full animate-pulse ${toast.isError ? 'bg-red-300' : 'bg-emerald-400'}`} />
@@ -309,6 +320,8 @@ console.log(filteredOrders);
       </div>
     </div>
   );
+
+
 };
 
 export default Orders;

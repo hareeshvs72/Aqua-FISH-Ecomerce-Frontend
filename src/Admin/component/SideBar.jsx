@@ -80,10 +80,13 @@ const SidebarItem = ({ icon: Icon, label, isActive, onClick, index, setRefs }) =
     );
 };
 
-const SideBar = () => {
+const SideBar = ({ isMobileOpen: propIsMobileOpen, setIsMobileOpen: propSetIsMobileOpen }) => {
     const [activeTab, setActiveTab] = useState('Dashboard');
-    const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [localIsMobileOpen, setLocalIsMobileOpen] = useState(false);
     const [gsapLoaded, setGsapLoaded] = useState(false);
+
+    const isMobileOpen = propIsMobileOpen !== undefined ? propIsMobileOpen : localIsMobileOpen;
+    const setIsMobileOpen = propSetIsMobileOpen !== undefined ? propSetIsMobileOpen : setLocalIsMobileOpen;
 
     const sidebarRef = useRef(null);
     const menuItemsRef = useRef([]);
@@ -120,22 +123,27 @@ const SideBar = () => {
         const gsap = window.gsap;
         const ctx = gsap.context(() => {
             const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+            const isDesktop = window.innerWidth >= 1024;
 
-            tl.fromTo(sidebarRef.current,
-                { x: -280, opacity: 0 },
-                { x: 0, opacity: 1, duration: 1 }
-            );
+            if (isDesktop) {
+                tl.fromTo(sidebarRef.current,
+                    { x: "-100%", opacity: 0 },
+                    { x: 0, opacity: 1, duration: 1 }
+                );
+            } else {
+                gsap.set(sidebarRef.current, { x: "-100%", opacity: 1 });
+            }
 
             tl.fromTo(logoRef.current,
                 { y: -20, opacity: 0 },
                 { y: 0, opacity: 1, duration: 0.5 },
-                "-=0.5"
+                isDesktop ? "-=0.5" : "0"
             );
 
             tl.fromTo(menuItemsRef.current,
                 { x: -30, opacity: 0 },
                 { x: 0, opacity: 1, duration: 0.4, stagger: 0.08 },
-                "-=0.3"
+                isDesktop ? "-=0.3" : "-=0.2"
             );
         });
 
@@ -151,7 +159,7 @@ const SideBar = () => {
                 gsap.to(sidebarRef.current, { x: 0, duration: 0.5, ease: "power2.out" });
                 gsap.to(overlayRef.current, { opacity: 1, pointerEvents: 'auto', duration: 0.3 });
             } else {
-                gsap.to(sidebarRef.current, { x: -280, duration: 0.5, ease: "power2.in" });
+                gsap.to(sidebarRef.current, { x: "-100%", duration: 0.5, ease: "power2.in" });
                 gsap.to(overlayRef.current, { opacity: 0, pointerEvents: 'none', duration: 0.3 });
             }
         }
@@ -160,15 +168,7 @@ const SideBar = () => {
     const { signOut } = useClerk();
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex font-sans text-zinc-900 overflow-hidden">
-            {/* Mobile Menu Toggle Button (visible only on small screens) */}
-            <button
-                onClick={() => setIsMobileOpen(true)}
-                className="lg:hidden fixed top-6 left-6 z-30 p-2 bg-black text-white rounded-lg shadow-xl"
-            >
-                <Menu size={20} />
-            </button>
-
+        <>
             {/* Mobile Overlay */}
             <div
                 ref={overlayRef}
@@ -180,12 +180,12 @@ const SideBar = () => {
             <aside
                 ref={sidebarRef}
                 className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-black flex flex-col p-6
+          fixed inset-y-0 left-0 z-50 w-72 bg-black flex flex-col p-6 lg:h-screen
           lg:translate-x-0 lg:static transform transition-none
         `}
             >
                 {/* Top Section - Logo */}
-                <div ref={logoRef} className="mb-10 px-2">
+                <div ref={logoRef} className="mb-10 px-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-red-900/40">
                             <span className="font-black text-xl italic">A</span>
@@ -199,8 +199,15 @@ const SideBar = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="mt-4 h-[2px] w-12 bg-red-600 rounded-full" />
+                    {/* Close button inside sidebar on mobile */}
+                    <button
+                        onClick={() => setIsMobileOpen(false)}
+                        className="lg:hidden p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
+                <div className="mt-2 mb-4 h-[2px] w-12 bg-red-600 rounded-full lg:block hidden" />
 
                 {/* Navigation Menu */}
                 <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
@@ -249,7 +256,7 @@ const SideBar = () => {
           border-radius: 10px;
         }
       `}} />
-        </div>
+        </>
     );
 };
 
