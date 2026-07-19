@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Eye, 
-  Trash2, 
-  Download, 
-  Plus, 
-  ChevronLeft, 
+import {
+  Eye,
+  Trash2,
+  Download,
+  Plus,
+  ChevronLeft,
   ChevronRight,
   UserCheck,
   Users as UsersIcon,
@@ -12,15 +12,48 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-
+import { getAllUsersAdminAPI } from '../../Service/allApi';
+import { useAuth } from "@clerk/clerk-react";
 const Users = () => {
-  const [userList, setUserList] = useState([
-    { id: 1, name: "Alexander Rivers", email: "alex.r@aquastore.com", role: "Admin", date: "Oct 12, 2023", avatar: "AR" },
-    { id: 2, name: "Sarah Jenkins", email: "s.jenkins@gmail.com", role: "Customer", date: "Nov 05, 2023", avatar: "SJ" },
-    { id: 3, name: "Michael Chen", email: "m.chen@outlook.com", role: "Editor", date: "Dec 18, 2023", avatar: "MC" },
-    { id: 4, name: "Elena Rodriguez", email: "elena.rod@webmail.com", role: "Customer", date: "Jan 22, 2024", avatar: "ER" },
-    { id: 5, name: "David Sterling", email: "d.sterling@aquastore.com", role: "Support", date: "Feb 02, 2024", avatar: "DS" }
-  ]);
+  // const [userList, setUserList] = useState([
+  //   { id: 1, name: "Alexander Rivers", email: "alex.r@aquastore.com", role: "Admin", date: "Oct 12, 2023", avatar: "AR" },
+  //   { id: 2, name: "Sarah Jenkins", email: "s.jenkins@gmail.com", role: "Customer", date: "Nov 05, 2023", avatar: "SJ" },
+  //   { id: 3, name: "Michael Chen", email: "m.chen@outlook.com", role: "Editor", date: "Dec 18, 2023", avatar: "MC" },
+  //   { id: 4, name: "Elena Rodriguez", email: "elena.rod@webmail.com", role: "Customer", date: "Jan 22, 2024", avatar: "ER" },
+  //   { id: 5, name: "David Sterling", email: "d.sterling@aquastore.com", role: "Support", date: "Feb 02, 2024", avatar: "DS" }
+  // ]);
+
+  const { getToken } = useAuth()
+
+  const [analytics, setAnalytics] = useState({
+    totalUsers: 0,
+    newRegistrations: 0,
+    activeUsers: 0,
+    users: []
+  });
+
+  const fetchAnalytics = async () => {
+    try {
+      const token = await getToken();
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const result = await getAllUsersAdminAPI(headers);
+
+      if (result.status === 200) {
+        setAnalytics(result.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+  console.log(analytics);
 
   const [toast, setToast] = useState({ show: false, message: "" });
   const [isVisible, setIsVisible] = useState(false);
@@ -48,7 +81,7 @@ const Users = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header Section */}
         <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -67,18 +100,18 @@ const Users = () => {
 
         {/* Stats Bar */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard label="Total Users" value="1,284" icon={<UsersIcon className="text-slate-400" />} />
-          <StatCard label="Active This Week" value="412" icon={<UserCheck className="text-cyan-500" />} color="text-cyan-600" />
-          <StatCard label="New Registrations" value="+24" icon={<UserPlus className="text-teal-500" />} color="text-teal-500" />
+          <StatCard label="Total Users" value={analytics.totalUsers} icon={<UsersIcon className="text-slate-400" />} />
+          <StatCard label="Active This Week" value={analytics.newRegistrations} icon={<UserCheck className="text-cyan-500" />} color="text-cyan-600" />
+          <StatCard label="New Registrations" value={analytics.activeUsers} icon={<UserPlus className="text-teal-500" />} color="text-teal-500" />
         </div>
 
         {/* Filters & Search */}
         <div className="bg-white p-4 border border-slate-200 border-b-0 rounded-t-2xl flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by name or email..." 
+            <input
+              type="text"
+              placeholder="Search by name or email..."
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all"
             />
           </div>
@@ -102,10 +135,10 @@ const Users = () => {
                 </tr>
               </thead>
               <tbody>
-                {userList.map((user, index) => (
-                  <tr 
-                    key={user.id} 
-                    style={{ 
+                {analytics?.users?.map((user, index) => (
+                  <tr
+                    key={user._id}
+                    style={{
                       transitionDelay: `${index * 50}ms`,
                       opacity: isVisible ? 1 : 0,
                       transform: isVisible ? 'translateY(0)' : 'translateY(10px)'
@@ -115,8 +148,7 @@ const Users = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs">
-                          {user.avatar}
-                        </div>
+                          {user.name.substring(0, 2).toUpperCase()}                        </div>
                         <span className="font-medium text-slate-800">{user.name}</span>
                       </div>
                     </td>
@@ -124,17 +156,17 @@ const Users = () => {
                     <td className="px-6 py-4">
                       <RoleBadge role={user.role} />
                     </td>
-                    <td className="px-6 py-4 text-slate-500 text-sm">{user.date}</td>
+                    <td className="px-6 py-4 text-slate-500 text-sm">{new Date(user.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => viewUser(user.name)}
                           className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-all"
                         >
                           <Eye size={18} />
                         </button>
-                        <button 
-                          onClick={() => deleteUser(user.id)}
+                        <button
+                          onClick={() => deleteUser(user._id)}
                           className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                           <Trash2 size={18} />
@@ -146,10 +178,10 @@ const Users = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           <div className="px-6 py-4 bg-slate-50/30 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-sm text-slate-500">Showing {userList.length} of 1,284 users</span>
+            <span className="text-sm text-slate-500">Showing {analytics.totalUsers} of {analytics.totalUsers}</span>
             <div className="flex gap-2">
               <button className="p-2 border border-slate-200 rounded-md hover:bg-white transition-colors"><ChevronLeft size={18} /></button>
               <button className="p-2 border border-slate-200 rounded-md hover:bg-white transition-colors"><ChevronRight size={18} /></button>
