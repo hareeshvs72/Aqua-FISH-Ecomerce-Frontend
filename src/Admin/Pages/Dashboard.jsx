@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-  Fish, 
-  Package, 
-  ShoppingCart, 
-  DollarSign, 
-  TrendingUp, 
+import { useNavigate } from "react-router-dom";
+import {
+  Fish,
+  Package,
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
   MoreVertical,
   ChevronRight,
   User,
@@ -12,13 +13,28 @@ import {
   Search,
   ArrowUpRight
 } from 'lucide-react';
+import {
+  getDashboardAPI,
+  getWeeklyRevenueAPI,
+  getMonthlyRevenueAPI,
+} from "../../Service/allApi";
+import { useAuth } from "@clerk/clerk-react";
+import Loading from '../component/Loading';
 
 const Dashboard = () => {
   const [gsapLoaded, setGsapLoaded] = useState(false);
   const statsRef = useRef(null);
   const contentRef = useRef(null);
+  const { getToken } = useAuth();
 
-  // Load GSAP via CDN to avoid resolution errors
+  const [dashboard, setDashboard] = useState({});
+  const [weeklyRevenue, setWeeklyRevenue] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [chartType, setChartType] = useState("weekly");
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Load GSAP via CDN
   useEffect(() => {
     const loadScript = (src) => {
       return new Promise((resolve) => {
@@ -44,52 +60,181 @@ const Dashboard = () => {
     const ScrollTrigger = window.ScrollTrigger;
     gsap.registerPlugin(ScrollTrigger);
 
-    // Fade-in stagger animation for stat cards
-    const cards = statsRef.current.children;
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 30 },
-      { 
-        opacity: 1, 
-        y: 0, 
-        duration: 0.8, 
-        stagger: 0.15, 
-        ease: "power3.out",
-        delay: 0.2 
-      }
-    );
-
-    // Slide-up animation for the table and chart sections
-    gsap.fromTo(
-      contentRef.current,
-      { opacity: 0, y: 50 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: contentRef.current,
-          start: "top 85%",
+    if (statsRef.current && statsRef.current.children) {
+      const cards = statsRef.current.children;
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.15,
+          ease: "power3.out",
+          delay: 0.2
         }
-      }
-    );
+      );
+    }
+
+    if (contentRef.current) {
+      gsap.fromTo(
+        contentRef.current,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: contentRef.current,
+            start: "top 85%",
+          }
+        }
+      );
+    }
   }, [gsapLoaded]);
 
+  // ---- API calls ----
+  useEffect(() => {
+    getDashboard();
+    getWeeklyRevenue();
+    getMonthlyRevenue();
+  }, []);
+
+  const getDashboard = async () => {
+    try {
+      const token = await getToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      const result = await getDashboardAPI(headers);
+
+      if (result.status === 200) {
+        setDashboard(result.data);
+      } else {
+        console.log(result);
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getWeeklyRevenue = async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      const result = await getWeeklyRevenueAPI(headers);
+
+      if (result.status === 200) {
+        setWeeklyRevenue(result.data);
+        console.log("weekly" , result.data);
+        
+      } else {
+        console.error("Failed to fetch weekly revenue:", result);
+      }
+    } catch (error) {
+      console.error("Error fetching weekly revenue:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getMonthlyRevenue = async () => {
+    try {
+      const token = await getToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      const result = await getMonthlyRevenueAPI(headers);
+
+      if (result.status === 200) {
+        setMonthlyRevenue(result.data);
+        console.log(result.data);
+        
+      } else {
+        console.error("Failed to fetch monthly revenue:", result);
+      }
+    } catch (error) {
+      console.error("Error fetching monthly revenue:", error);
+    } finally {
+      console.log("MONTHLY API request completed.");
+      setLoading(false); // If you have a loading state
+    }
+  };
+
   const stats = [
-    { label: 'Total Fish Products', value: '1,284', icon: Fish, trend: '+12%' },
-    { label: 'Total Accessories', value: '452', icon: Package, trend: '+5%' },
-    { label: 'Total Orders', value: '89', icon: ShoppingCart, trend: '+18%' },
-    { label: 'Total Revenue', value: '$12,450', icon: DollarSign, trend: '+24%' },
+    {
+      label: "Total Fish Products",
+      value: dashboard?.cards?.totalFishProducts || 0,
+      icon: Fish,
+      trend: "+12%",
+    },
+    {
+      label: "Total Accessories",
+      value: dashboard?.cards?.totalAccessories || 0,
+      icon: Package,
+      trend: "+5%",
+    },
+    {
+      label: "Total Orders",
+      value: dashboard?.cards?.totalOrders || 0,
+      icon: ShoppingCart,
+      trend: "+18%",
+    },
+    {
+      label: "Total Revenue",
+      value: `₹${dashboard?.cards?.totalRevenue || 0}`,
+      icon: DollarSign,
+      trend: "+24%",
+    },
   ];
 
-  const recentOrders = [
-    { id: '#ORD-7721', customer: 'Alex Rivers', product: 'Neon Tetra x20', status: 'Delivered', amount: '$45.00' },
-    { id: '#ORD-7722', customer: 'Sarah Chen', product: 'Premium Coral Food', status: 'Pending', amount: '$32.50' },
-    { id: '#ORD-7723', customer: 'Mike Ross', product: 'LED Reef Light', status: 'Shipped', amount: '$210.00' },
-    { id: '#ORD-7724', customer: 'Elena Gilbert', product: 'Betta Splendens', status: 'Delivered', amount: '$15.00' },
+  const weekLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
   ];
 
+  const weeklyChart = Array(7).fill(0);
+  weeklyRevenue?.forEach((item) => {
+    if (item._id && item._id >= 1 && item._id <= 7) {
+      weeklyChart[item._id - 1] = item.revenue;
+    }
+  });
+
+  const monthlyChart = Array(12).fill(0);
+  monthlyRevenue?.forEach((item) => {
+    if (item._id && item._id >= 1 && item._id <= 12) {
+      monthlyChart[item._id - 1] = item.revenue;
+    }
+  });
+
+  const chartData = chartType === "weekly" ? weeklyChart : monthlyChart;
+  const labels = chartType === "weekly" ? weekLabels : monthLabels;
+  const maxRevenue = Math.max(...chartData, 1);
+
+  // SVG dimensions & padding calculation
+  const svgWidth = 600;
+  const svgHeight = 220;
+  const padding = 30;
+
+  const points = chartData.map((val, idx) => {
+    const x = padding + (idx / Math.max(chartData.length - 1, 1)) * (svgWidth - padding * 2);
+    const y = svgHeight - padding - (val / maxRevenue) * (svgHeight - padding * 2);
+    return { x, y, value: val, label: labels[idx] };
+  });
+
+  const linePathD = points.reduce((acc, pt, i) => {
+    return i === 0 ? `M ${pt.x},${pt.y}` : `${acc} L ${pt.x},${pt.y}`;
+  }, "");
+
+  const areaPathD = points.length > 0
+    ? `${linePathD} L ${points[points.length - 1].x},${svgHeight - padding} L ${points[0].x},${svgHeight - padding} Z`
+    : "";
+  {/* Loading State */}
+      if(loading) return  (
+        <Loading/>
+       
+        )
   return (
     <div className="min-h-screen bg-white text-black font-sans selection:bg-red-100">
       {/* Navigation */}
@@ -99,24 +244,6 @@ const Dashboard = () => {
             <Fish className="text-white w-5 h-5" />
           </div>
           <span className="font-bold text-xl tracking-tight uppercase">AquaStore</span>
-        </div>
-        
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-            <Search className="w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search data..." 
-              className="bg-transparent border-none outline-none text-sm ml-2 w-48"
-            />
-          </div>
-          <div className="relative cursor-pointer">
-            <Bell className="w-5 h-5 text-gray-400 hover:text-black transition-colors" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full"></span>
-          </div>
-          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer border border-gray-200">
-            <User className="w-4 h-4" />
-          </div>
         </div>
       </nav>
 
@@ -129,8 +256,8 @@ const Dashboard = () => {
         {/* Stats Grid */}
         <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {stats.map((stat, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="group p-6 rounded-2xl border border-gray-100 bg-white hover:border-red-500 transition-all duration-300 shadow-sm hover:shadow-xl"
             >
               <div className="flex justify-between items-start mb-4">
@@ -152,42 +279,128 @@ const Dashboard = () => {
 
         {/* Dynamic Content Section */}
         <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Sales Overview Chart (Visual Representation) */}
+
+          {/* Sales Overview Chart (SVG Vector Line Chart) */}
           <div className="lg:col-span-2 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-bold">Revenue Growth</h2>
               <div className="flex gap-2">
-                <button className="px-3 py-1 text-xs font-bold border border-black rounded-full">Weekly</button>
-                <button className="px-3 py-1 text-xs font-bold text-gray-400 hover:text-black transition-colors">Monthly</button>
+                <button
+                  onClick={() => setChartType("weekly")}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-colors ${
+                    chartType === "weekly"
+                      ? "border border-black bg-black text-white"
+                      : "text-gray-400 hover:text-black"
+                  }`}
+                >
+                  Weekly
+                </button>
+
+                <button
+                  onClick={() => setChartType("monthly")}
+                  className={`px-3 py-1 text-xs font-bold rounded-full transition-colors ${
+                    chartType === "monthly"
+                      ? "border border-black bg-black text-white"
+                      : "text-gray-400 hover:text-black"
+                  }`}
+                >
+                  Monthly
+                </button>
               </div>
             </div>
-            
-            {/* Mock Chart Visual */}
-            <div className="h-64 flex items-end justify-between gap-3 px-2">
-              {[35, 60, 40, 85, 55, 75, 45, 95, 50, 70, 80, 35].map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center group">
-                  <div className="w-full relative">
-                     <div 
-                      className="w-full bg-gray-100 group-hover:bg-red-600 transition-all duration-300 rounded-t-sm" 
-                      style={{ height: `${h}%` }}
-                    ></div>
-                    {/* Tooltip on hover */}
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      ${h * 10}
-                    </div>
-                  </div>
-                  <span className="text-[10px] mt-2 text-gray-400 font-bold group-hover:text-black">
-                    {['J','F','M','A','M','J','J','A','S','O','N','D'][i]}
-                  </span>
-                </div>
-              ))}
+
+            <div className="relative w-full h-64 flex items-center justify-center">
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full h-full overflow-visible"
+              >
+                <defs>
+                  <linearGradient id="gradientArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#dc2626" stopOpacity="0.2" />
+                    <stop offset="100%" stopColor="#dc2626" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Grid lines */}
+                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                  const yVal = padding + ratio * (svgHeight - padding * 2);
+                  return (
+                    <line
+                      key={i}
+                      x1={padding}
+                      y1={yVal}
+                      x2={svgWidth - padding}
+                      y2={yVal}
+                      stroke="#f3f4f6"
+                      strokeDasharray="4 4"
+                    />
+                  );
+                })}
+
+                {/* Smooth area fill */}
+                {areaPathD && (
+                  <path d={areaPathD} fill="url(#gradientArea)" />
+                )}
+
+                {/* Main connected chart line */}
+                {linePathD && (
+                  <path
+                    d={linePathD}
+                    fill="none"
+                    stroke="#dc2626"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Node points and interactive tooltips */}
+                {points.map((pt, i) => (
+                  <g key={i} className="group/node cursor-pointer">
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="5"
+                      className="fill-white stroke-red-600 stroke-[3] transition-all duration-200 group-hover/node:r-7"
+                    />
+                    <text
+                      x={pt.x}
+                      y={svgHeight - 8}
+                      textAnchor="middle"
+                      className="text-[10px] fill-gray-400 font-bold"
+                    >
+                      {pt.label}
+                    </text>
+
+                    {/* Tooltip bubble on hover */}
+                    <g className="opacity-0 group-hover/node:opacity-100 transition-opacity duration-200 pointer-events-none">
+                      <rect
+                        x={pt.x - 32}
+                        y={pt.y - 34}
+                        width="64"
+                        height="22"
+                        rx="6"
+                        className="fill-black"
+                      />
+                      <text
+                        x={pt.x}
+                        y={pt.y - 20}
+                        textAnchor="middle"
+                        className="text-[10px] fill-white font-bold"
+                      >
+                        ₹{pt.value}
+                      </text>
+                    </g>
+                  </g>
+                ))}
+              </svg>
             </div>
           </div>
 
           {/* Quick Insights / Active Items */}
           <div className="p-8 rounded-3xl border border-gray-100 bg-black text-white shadow-sm">
             <h2 className="text-xl font-bold mb-6">Quick Insights</h2>
+
             <div className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center shrink-0">
@@ -195,25 +408,40 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm font-bold">Live Stock Alert</p>
-                  <p className="text-xs text-gray-400">5 tropical fish types low</p>
+                  <p className="text-xs text-gray-400">
+                    {dashboard?.quickInsights?.lowStockProducts?.length > 0
+                      ? `${dashboard.quickInsights.lowStockProducts.length} products are low in stock`
+                      : "No low stock products"}
+                  </p>
                 </div>
               </div>
+
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
                   <Package className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold">Filter Supplies</p>
-                  <p className="text-xs text-gray-400">Order arriving 4:00 PM</p>
+                  <p className="text-sm font-bold">Pending Orders</p>
+                  <p className="text-xs text-gray-400">
+                    {dashboard?.quickInsights?.pendingOrders || 0} orders pending
+                  </p>
                 </div>
               </div>
+
               <hr className="border-white/10" />
+
               <div className="pt-2">
                 <div className="flex justify-between items-end mb-2">
-                  <p className="text-3xl font-black text-red-500 leading-none">98.4%</p>
+                  <p className="text-3xl font-black text-red-500 leading-none">
+                    {dashboard?.quickInsights?.pendingOrders || 0}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Customer Happiness</p>
+
+                <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">
+                  Pending Orders
+                </p>
               </div>
+
               <button className="w-full py-4 mt-2 bg-white text-black rounded-2xl font-bold text-sm hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2">
                 Generate Monthly PDF <ChevronRight className="w-4 h-4" />
               </button>
@@ -224,7 +452,12 @@ const Dashboard = () => {
           <div className="lg:col-span-3 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xl font-bold">Recent Store Activity</h2>
-              <button className="text-sm font-bold text-red-600 hover:underline">View All Sales</button>
+              <button
+                onClick={() => navigate('/admin/orders')}
+                className="text-sm font-bold text-red-600 hover:underline"
+              >
+                View All Sales
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -239,20 +472,40 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {recentOrders.map((order, idx) => (
-                    <tr key={idx} className="group hover:bg-gray-50/50 transition-colors">
-                      <td className="py-5 font-bold text-sm">{order.id}</td>
-                      <td className="py-5 text-sm font-medium">{order.customer}</td>
-                      <td className="py-5 text-sm text-gray-500 italic">{order.product}</td>
+                  {dashboard?.recentOrders?.map((order) => (
+                    <tr
+                      key={order._id}
+                      className="group hover:bg-gray-50/50 transition-colors"
+                    >
+                      <td className="py-5 font-bold text-sm">
+                        #{order._id.slice(-6)}
+                      </td>
+                      <td className="py-5 text-sm font-medium">
+                        {order.user?.name}
+                      </td>
+                      <td className="py-5 text-sm text-gray-500 italic">
+                        {order.items
+                          ?.map((item) => item.product?.name || "Product Deleted")
+                          .join(", ")}
+                      </td>
                       <td className="py-5">
-                        <span className={`text-[10px] font-black uppercase px-2 py-1 rounded ${
-                          order.status === 'Delivered' ? 'bg-green-50 text-green-700' : 
-                          order.status === 'Pending' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
-                        }`}>
-                          {order.status}
+                        <span
+                          className={`text-[10px] font-black uppercase px-2 py-1 rounded ${
+                            order.orderStatus === "Delivered"
+                              ? "bg-green-50 text-green-700"
+                              : order.orderStatus === "Pending"
+                              ? "bg-amber-50 text-amber-700"
+                              : order.orderStatus === "Cancelled"
+                              ? "bg-red-50 text-red-700"
+                              : "bg-blue-50 text-blue-700"
+                          }`}
+                        >
+                          {order.orderStatus}
                         </span>
                       </td>
-                      <td className="py-5 font-bold text-red-600">{order.amount}</td>
+                      <td className="py-5 font-bold text-red-600">
+                        ₹{order.totalAmount}
+                      </td>
                       <td className="py-5 text-right">
                         <button className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-200">
                           <MoreVertical className="w-4 h-4 text-gray-400" />
@@ -266,8 +519,6 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
-
-      
     </div>
   );
 };

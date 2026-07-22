@@ -143,6 +143,7 @@ const Orders = () => {
   }, [loading, filteredOrders]);
 
 
+  
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900 ">
@@ -245,8 +246,8 @@ const Orders = () => {
                             : order.clerkId
                           : "Unknown";
                       return (
-                        
-                         <tr key={order?._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group ">
+
+                        <tr key={order?._id} className="order-row border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors group ">
                           <td className="px-6 py-5 font-bold text-blue-600 font-mono text-sm"><div>{shortId}</div></td>
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-2">
@@ -259,7 +260,7 @@ const Orders = () => {
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex items-center text-slate-500 text-sm max-w-[220px]">
-                             <td>TEXT</td>
+                              <td>TEXT</td>
                             </div>
                           </td>
                           <td className="px-6 py-5 font-bold text-slate-900">

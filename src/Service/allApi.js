@@ -87,3 +87,25 @@ export const verifyPaymentAPI = (sessionId, reqHeader) => {
     reqHeader
   );
 };
+
+
+//  admin dash board
+
+export const getDashboardAPI = (headers) =>
+  commonAPI("GET", `${SERVER_URL}/dashboard`, {}, headers);
+
+export const getWeeklyRevenueAPI = (headers) =>
+  commonAPI(
+    "GET",
+    `${SERVER_URL}/dashboard/weekly-revenue`,
+    {},
+    headers
+  );
+
+export const getMonthlyRevenueAPI = (headers) =>
+  commonAPI(
+    "GET",
+    `${SERVER_URL}/dashboard/monthly-revenue`,
+    {},
+    headers
+  );
