@@ -1,12 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { contactAPI } from '../../Service/allApi';
 
 const Contact = () => {
   const containerRef = useRef(null);
   const [gsapLoaded, setGsapLoaded] = useState(false);
   const [formStatus, setFormStatus] = useState(null);
-
+const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
+});
+const [loading, setLoading] = useState(false);
   useEffect(() => {
     const loadScript = (src) => {
       return new Promise((resolve, reject) => {
@@ -93,15 +100,44 @@ const Contact = () => {
     return () => ctx.revert();
   }, [gsapLoaded]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+    setFormStatus("Please fill all fields.");
+    return;
+  }
+
+  try {
+    setLoading(true);
     setFormStatus("Sending...");
-    setTimeout(() => {
-      setFormStatus("Message Sent Successfully!");
-      e.target.reset();
-      setTimeout(() => setFormStatus(null), 5000);
-    }, 1500);
-  };
+
+    const result = await contactAPI(formData);
+
+    if (result.status === 200) {
+      setFormStatus("✅ Message sent successfully!");
+
+      // Clear form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+
+      setTimeout(() => {
+        setFormStatus(null);
+      }, 5000);
+    } else {
+      setFormStatus("❌ Failed to send message.");
+    }
+  } catch (error) {
+    console.error(error);
+    setFormStatus("❌ Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
    <>
@@ -163,40 +199,108 @@ const Contact = () => {
     
                 {/* MAIN CONTACT FORM */}
                 <div className="lg:col-span-8 contact-form-container bg-white border border-gray-100 p-8 md:p-16 shadow-2xl shadow-gray-200/50">
-                  <form onSubmit={handleSubmit} className="space-y-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      <div className="form-field group">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">Name</label>
-                        <input required type="text" placeholder="John Doe" className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200" />
-                      </div>
-                      <div className="form-field group">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">Email</label>
-                        <input required type="email" placeholder="john@example.com" className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200" />
-                      </div>
-                    </div>
-                    
-                    <div className="form-field group">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">Subject</label>
-                      <input required type="text" placeholder="Inquiry about Discus" className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200" />
-                    </div>
-    
-                    <div className="form-field group">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">Message</label>
-                      <textarea rows="4" required placeholder="Tell us more..." className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200 resize-none"></textarea>
-                    </div>
-    
-                    <div className="form-field pt-6">
-                      <button type="submit" className="group relative w-full md:w-auto px-16 py-5 bg-red-600 text-white font-black uppercase tracking-widest overflow-hidden transition-all hover:bg-black active:scale-95 shadow-xl shadow-red-600/20 hover:shadow-black/20">
-                        <span className="relative z-10">Send Message</span>
-                      </button>
-                      
-                      {formStatus && (
-                        <p className="mt-6 text-xs font-bold uppercase tracking-widest text-red-600 animate-pulse">
-                          {formStatus}
-                        </p>
-                      )}
-                    </div>
-                  </form>
+                 <form onSubmit={handleSubmit} className="space-y-10">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+    {/* Name */}
+    <div className="form-field group">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">
+        Name
+      </label>
+      <input
+        type="text"
+        name="name"
+        required
+        value={formData.name}
+        onChange={(e) =>
+          setFormData({ ...formData, name: e.target.value })
+        }
+        placeholder="John Doe"
+        className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200"
+      />
+    </div>
+
+    {/* Email */}
+    <div className="form-field group">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">
+        Email
+      </label>
+      <input
+        type="email"
+        name="email"
+        required
+        value={formData.email}
+        onChange={(e) =>
+          setFormData({ ...formData, email: e.target.value })
+        }
+        placeholder="john@example.com"
+        className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200"
+      />
+    </div>
+  </div>
+
+  {/* Subject */}
+  <div className="form-field group">
+    <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">
+      Subject
+    </label>
+    <input
+      type="text"
+      name="subject"
+      required
+      value={formData.subject}
+      onChange={(e) =>
+        setFormData({ ...formData, subject: e.target.value })
+      }
+      placeholder="Inquiry about Discus"
+      className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200"
+    />
+  </div>
+
+  {/* Message */}
+  <div className="form-field group">
+    <label className="text-[10px] font-black uppercase tracking-[0.2em] mb-3 block text-gray-400 group-focus-within:text-black transition-colors">
+      Message
+    </label>
+    <textarea
+      rows={4}
+      name="message"
+      required
+      value={formData.message}
+      onChange={(e) =>
+        setFormData({ ...formData, message: e.target.value })
+      }
+      placeholder="Tell us more..."
+      className="w-full bg-transparent border-b border-gray-200 py-3 outline-none focus:border-red-600 transition-all font-medium text-lg placeholder:text-gray-200 resize-none"
+    ></textarea>
+  </div>
+
+  {/* Submit Button */}
+  <div className="form-field pt-6">
+    <button
+      type="submit"
+      disabled={loading}
+      className="group relative w-full md:w-auto px-16 py-5 bg-red-600 text-white font-black uppercase tracking-widest overflow-hidden transition-all hover:bg-black active:scale-95 shadow-xl shadow-red-600/20 hover:shadow-black/20 disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      <span className="relative z-10">
+        {loading ? "Sending..." : "Send Message"}
+      </span>
+    </button>
+
+    {formStatus && (
+      <p
+        className={`mt-6 text-xs font-bold uppercase tracking-widest ${
+          formStatus.includes("success")
+            ? "text-green-600"
+            : formStatus.includes("Sending")
+            ? "text-blue-600 animate-pulse"
+            : "text-red-600"
+        }`}
+      >
+        {formStatus}
+      </p>
+    )}
+  </div>
+</form>
                 </div>
               </div>
             </section>

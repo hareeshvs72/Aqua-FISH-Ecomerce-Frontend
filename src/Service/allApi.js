@@ -109,3 +109,13 @@ export const getMonthlyRevenueAPI = (headers) =>
     {},
     headers
   );
+
+  //contact 
+
+  export const contactAPI = (data) => {
+    return commonAPI(
+        "POST",
+        `${SERVER_URL}/contact`,
+        data
+    );
+};

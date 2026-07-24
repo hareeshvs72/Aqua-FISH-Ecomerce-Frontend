@@ -1,7 +1,6 @@
 import { useClerk, useUser } from '@clerk/clerk-react';
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 // Dynamic GSAP Loader for smooth aquatic transitions
 const loadGSAP = () => {
   return new Promise((resolve) => {
@@ -20,7 +19,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [activeIdx, setActiveIdx] = useState(0);
+  // const [activeIdx, setActiveIdx] = useState(0);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
  
 
@@ -35,6 +34,7 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
   const userMenuRef = useRef(null);
 
    const navigate =  useNavigate()
+   const location = useLocation();
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -147,7 +147,7 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
   }, [isSearchOpen, isReady]);
 
   const renderLogo = () => (
-    <div className="logo-anim flex items-center gap-2 group cursor-pointer" onClick={() => setActiveIdx(0)}>
+    <div className="logo-anim flex items-center gap-2 group cursor-pointer" onClick={() => navigate("/")}>
       <div className="relative">
         <svg width="30" height="30" viewBox="0 0 40 40" fill="none" className="group-hover:rotate-12 transition-transform duration-500">
           <path d="M5 20C5 20 12 10 22 10C32 10 38 20 38 20C38 20 32 30 22 30C12 30 5 20 5 20Z" stroke="black" strokeWidth="2.5" />
@@ -177,16 +177,23 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
             <li key={link.name} className="nav-item relative group py-2">
               <Link
                 to={link.href}
-                onClick={() => setActiveIdx(idx)}
-                className={`text-[10px] lg:text-[11px] font-black uppercase tracking-[0.25em]
-    ${activeIdx === idx ? "text-red-600" : "text-zinc-400 group-hover:text-black"}`}
+              className={`text-[10px] lg:text-[11px] font-black uppercase tracking-[0.25em]
+${
+  location.pathname === link.href
+    ? "text-red-600"
+    : "text-zinc-400 group-hover:text-black"
+}`}
               >
                 {link.name}
               </Link>
 
               <div
                 className={`absolute -bottom-1 left-1/2 -translate-x-1/2 h-[2px] bg-red-600 transition-all duration-300 ease-out
-                  ${activeIdx === idx ? "w-full opacity-100" : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"}`}
+                  ${
+  location.pathname === link.href
+    ? "w-full opacity-100"
+    : "w-0 opacity-0 group-hover:w-full group-hover:opacity-100"
+}`}
               />
             </li>
           ))}
@@ -310,10 +317,13 @@ const { openSignUp, openSignIn, signOut ,openUserProfile} = useClerk()
             to={link.href}
             onClick={() => {
               setIsMenuOpen(false);
-              setActiveIdx(idx);
             }}
             className={`mobile-link text-4xl font-black uppercase tracking-tighter
-    ${activeIdx === idx ? 'text-red-600' : 'text-black hover:text-red-600'}`}
+   ${
+  location.pathname === link.href
+    ? "text-red-600"
+    : "text-black hover:text-red-600"
+}`}
           >
             {link.name}
           </Link>

@@ -11,15 +11,17 @@ import {
   DollarSign,
   Database,
   X,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import AddProduct from '../component/AddProduct';
 import { useNavigate } from 'react-router-dom';
+import Loading from '../component/Loading';
 
 const Product = () => {
   // Mock Data for Aqua Store
   const [products, setProducts] = useState([]);
-
+  const [loading,setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -151,12 +153,25 @@ const Product = () => {
 
     } catch (error) {
       console.log(error);
+    }finally{
+      setLoading(false)
     }
   };
 
   useEffect(() => {
     getProducts();
   }, []);
+
+ if(loading) {
+  return(
+    <div>
+     <div className="flex items-center justify-center py-20 h-screen bg-white rounded-2xl border border-slate-200">
+            <Loader2 size={36} className="text-red-500 animate-spin mr-3" />
+            <span className="text-slate-500 font-medium">Loading Products...</span>
+          </div>
+   </div>
+  )
+ }
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">

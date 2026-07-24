@@ -143,6 +143,17 @@ const Orders = () => {
   }, [loading, filteredOrders]);
 
 
+
+   if(loading) {
+    return(
+      <div>
+       <div className="flex items-center justify-center py-20 h-screen bg-white rounded-2xl border border-slate-200">
+              <Loader2 size={36} className="text-red-500 animate-spin mr-3" />
+              <span className="text-slate-500 font-medium">Loading Orders...</span>
+            </div>
+     </div>
+    )
+   }
   
 
   return (
@@ -192,12 +203,12 @@ const Orders = () => {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {/* {loading && (
           <div className="flex items-center justify-center py-20 bg-white rounded-2xl border border-slate-200">
-            <Loader2 size={36} className="text-blue-500 animate-spin mr-3" />
+            <Loader2 size={36} className="text-red-500 animate-spin mr-3" />
             <span className="text-slate-500 font-medium">Loading orders...</span>
           </div>
-        )}
+        )} */}
 
         {/* Error State */}
         {!loading && error && (
